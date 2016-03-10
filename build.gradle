@@ -1,0 +1,36 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+import org.apache.tools.ant.filters.ReplaceTokens
+
+version = '0.1'
+String pluginName = 'SecondChance'
+String pluginMain = 'com.logicallunacy.secondChance.SecondChance'
+String author = 'Roboboy'
+
+repositories {
+  mavenLocal()
+}
+
+dependencies {
+	compile group: 'org.spigotmc', name: 'spigot', version: '1.9-R0.1-SNAPSHOT'
+}
+
+task generatePluginYaml(type: Copy) {
+  from 'templates/plugin.yml'
+  into 'src/main/resources/'
+  filter(ReplaceTokens, tokens: [
+		version:		version,
+    pluginName: pluginName,
+    mainClass:  pluginMain,
+    author:			author,
+  ])
+}
+
+task removePluginYaml(type: Delete) {
+	delete 'src/main/resources/plugin.yml'
+}
+
+generatePluginYaml.dependsOn('removePluginYaml')
+processResources.dependsOn('generatePluginYaml')
+clean.dependsOn('removePluginYaml')
