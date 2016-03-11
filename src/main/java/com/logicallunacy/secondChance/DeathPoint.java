@@ -9,8 +9,6 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.World;
-import org.bukkit.block.Biome;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -20,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.metadata.MetadataValue;
 
 class DeathPoint {
 	
@@ -91,22 +90,17 @@ class DeathPoint {
 	public void createNew(Location playerLocation) {
 		destroy();
 		
-		m_location = findSafeLocation(playerLocation);
+		m_location = findLocation();
 		
 		PlayerInventory playerInv = m_player.getInventory();
-		
 		ItemStack[] inventory = playerInv.getContents();
 		ItemStack[] contentsArray = new ItemStack[INV_SIZE];
 		System.arraycopy(inventory, 9, contentsArray, 0, 27); //Main inventory
 		System.arraycopy(inventory, 0, contentsArray, 27, 9); //Hotbar
-		
-		//Armor & Offhand
-		//ArrayUtils.reverse(inventory, 36, inventory.length);
 		System.arraycopy(inventory, 36, contentsArray, INV_SIZE - 4, 4); //Armor
 		System.arraycopy(inventory, 40, contentsArray, 36, 1); //Off hand
 		
 		m_contents.setContents(contentsArray);
-		
 		m_experience = Util.calculateXpFromLevel(m_player.getLevel()) + Util.calculateXpFromProgress(m_player.getLevel(), m_player.getExp());
 		
 		//Create hitbox
@@ -164,118 +158,20 @@ class DeathPoint {
 		if (isEmpty()) finish();
 	}
 	
-	private Location findSafeLocation(Location playerLoc)
-	{
-		World w = playerLoc.getWorld();
-		int x = playerLoc.getBlockX();
-		int y = playerLoc.getBlockY();
-		int z = playerLoc.getBlockZ();
-		
-		if (y < 0)
-			y = 0;
-		
-		Location bestLoc = new Location(w, x, y, z);
-		int bestLocScore = scoreLocation(bestLoc);
-		
-		while (y < 255)
-		{
-			//Middle
-			Location loc = new Location(w, x, y, z);
-			int locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			if (bestLocScore == 10 || loc.getBlock().getType() == Material.BEDROCK)
-				break;
-			
-			//Negative x
-			loc = new Location(w, x-1, y, z);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			//Positive x
-			loc = new Location(w, x+1, y, z);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			//Negative z
-			loc = new Location(w, x, y, z-1);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			//Positive z
-			loc = new Location(w, x, y, z+1);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			if (bestLocScore == 10)
-				break;
-			
-			y++;
-		}
-		
-		Location upLoc = bestLoc.clone().add(0.5, 1, 0.5);
-		if (scoreLocation(upLoc) == bestLocScore)
-			return upLoc;
-		else
-			return bestLoc.add(0.5, 0, 0.5);
+	public void particles() {
+		if (m_location == null) return;
+		m_location.getWorld().spawnParticle(PARTICLE_TYPE, m_location, 50, 0.2, 0.2, 0.2, 0.5);
 	}
-
-	private int scoreLocation(Location loc)
-	{
-		Material mat = loc.getBlock().getType();
-		int score = -5;
-		
-		switch (mat)
-		{
-		case AIR:				score = 10;
-			break;
-		case STATIONARY_WATER:	score = 5;
-			break;
-		case WATER:				score = 6;
-			break;
-		case STATIONARY_LAVA:	score = -10;
-			break;
-		case LAVA:				score = -9;
-			break;
-		default:
-			if (!mat.isSolid())
-				score = 10;
-			else if (mat.isTransparent())
-				score = 3;
-			else if (!mat.isOccluding())
-				score = 1;
-			break;
+	
+	private Location findLocation() {
+		for (MetadataValue value: m_player.getMetadata("lastNonsolidGroundPosition")) {
+			if (value.getOwningPlugin() != m_plugin) continue;
+			Location loc = ((Location) value.value()).getBlock().getLocation();
+			loc.add(0.5, 0, 0.5);
+			return loc;
 		}
 		
-		if (loc.getBlock().getBiome() == Biome.SKY && loc.getY() < 32)
-			score--;
-		
-		return score;
+		throw new IllegalStateException("No valid position found for deathpoint.");
 	}
 	
 	private void destroy() {
@@ -287,11 +183,6 @@ class DeathPoint {
 			item = null;
 		}
 		m_location = null;
-	}
-
-	public void particles() {
-		if (m_location == null) return;
-		m_location.getWorld().spawnParticle(PARTICLE_TYPE, m_location, 50, 0.2, 0.2, 0.2, 0.5);
 	}
 	
 	private boolean isEmpty() {

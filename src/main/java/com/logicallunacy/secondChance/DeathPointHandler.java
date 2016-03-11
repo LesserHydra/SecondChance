@@ -1,8 +1,9 @@
 package com.logicallunacy.secondChance;
 
-import java.io.IOException;
 import java.util.HashMap;
+import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -12,11 +13,13 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -45,7 +48,7 @@ class DeathPointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerQuit(PlayerQuitEvent e) throws IOException {
+	public void onPlayerQuit(PlayerQuitEvent e) {
 		DeathPoint deathPoint = m_deathPoints.get(e.getPlayer().getName());
 		deathPoint.despawnHitbox();
 		deathPoint.save();
@@ -60,6 +63,18 @@ class DeathPointHandler implements Listener {
 		deathPoint.createNew(player.getLocation());
 		e.setDroppedExp(0);
 		e.setKeepInventory(true);
+	}
+	
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPlayerMove(PlayerMoveEvent event) {
+		if (!((Entity)event.getPlayer()).isOnGround()) return;
+		
+		Player player = event.getPlayer();
+		Location loc = player.getLocation().add(0, 1, 0);
+		if (loc.getBlock().getType().isSolid()) return;
+		if (loc.getBlock().isLiquid()) return;
+		
+		player.setMetadata("lastNonsolidGroundPosition", new FixedMetadataValue(plugin, loc));
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)

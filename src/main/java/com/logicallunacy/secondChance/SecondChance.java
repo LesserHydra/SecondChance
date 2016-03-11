@@ -34,41 +34,4 @@ public class SecondChance extends JavaPlugin
 		m_eventListener.deinit();
 	}
 
-	/*//Command handling
-	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String lable, String[] args)
-	{
-		if (sender instanceof Player)
-		{
-			Player player = (Player)sender;
-			if (args.length > 0)
-			{
-				String subCommand = args[0];
-				if (subCommand.equalsIgnoreCase("loadInv"))
-				{
-					DeathPoint point = m_deathPoints.get(player.getName());
-					if (point != null) point.showContents(player);
-					else player.sendMessage(ChatColor.RED + "You don't have a death point in memory!");
-				}
-				else showCommandHelp(sender);
-			}
-			else showCommandHelp(sender);
-		}
-		else
-		{
-			//Sender is not a player
-			sender.sendMessage(ChatColor.RED + "Only players may use this command!");
-		}
-		
-		
-		return true;
-	}*/
-
-	/*private void showCommandHelp(CommandSender sender)
-	{
-		sender.sendMessage(ChatColor.GRAY + "---------------SecondChance---------------");
-		sender.sendMessage(ChatColor.GRAY + "This command is for testing purposes only, for now.");
-		sender.sendMessage(ChatColor.GRAY + "/sc loadInv - Load your saved inventory");
-	}*/
-
 }
