@@ -22,8 +22,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-public class DeathPointHandler implements Listener
-{
+class DeathPointHandler implements Listener {
+	
 	private SecondChance plugin;
 	
 	private BukkitTask particleTask;
