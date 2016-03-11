@@ -3,40 +3,39 @@ package com.logicallunacy.secondChance;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
+import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import com.darkblade12.particleeffect.ParticleEffect;
 
-public class DeathPoint
-{
-	ParticleEffect m_effect = ParticleEffect.PORTAL;
+public class DeathPoint {
+	private static Particle m_effect = Particle.PORTAL;
 	
-	SecondChance m_plugin;
+	private SecondChance m_plugin;
 	
-	Player m_player;
-	Location m_location;
-	ArmorStand m_armorStand;
+	private Player m_player;
+	private Location m_location;
+	private ArmorStand m_armorStand;
 	
 	//Contents
-	Inventory m_contents;
-	int m_experience;
-	//int m_level;
-	//float m_exp;
+	private Inventory m_contents;
+	private int m_experience;
 	
 	
-	public DeathPoint(SecondChance plugin, Player player)
-	{
+	public DeathPoint(SecondChance plugin, Player player) {
 		m_plugin = plugin;
 		m_player = player;
 		m_location = null;
@@ -44,20 +43,22 @@ public class DeathPoint
 		m_experience = 0;
 	}
 	
-	public void createNew()
-	{
+	public void createNew(Location playerLocation) {
 		destroy();
 		
-		m_location = findSafeLocation(m_player.getLocation());
+		m_location = findSafeLocation(playerLocation);
 		
 		PlayerInventory playerInv = m_player.getInventory();
 		
-		ItemStack[] inventory = playerInv .getContents();
-		ItemStack[] armor = playerInv.getArmorContents();
+		ItemStack[] inventory = playerInv.getContents();
 		ItemStack[] contentsArray = new ItemStack[45];
 		System.arraycopy(inventory, 9, contentsArray, 0, 27); //Main inventory
 		System.arraycopy(inventory, 0, contentsArray, 27, 9); //Hotbar
-		System.arraycopy(armor, 0, contentsArray, 41, 4); //Armor
+		
+		//Armor & Offhand
+		int numberRemaining = inventory.length - 36;
+		ArrayUtils.reverse(inventory, 36, inventory.length);
+		System.arraycopy(inventory, 36, contentsArray, 45 - numberRemaining, numberRemaining);
 		
 		m_contents.setContents(contentsArray);
 		
@@ -68,38 +69,31 @@ public class DeathPoint
 		
 		//Clear player's inventory
 		playerInv.clear();
-		playerInv.setArmorContents(new ItemStack[4]);
 		
-		//TODO: Need some safety if the save fails
-		try {save();}
-		catch (IOException e) {e.printStackTrace();}
+		//Save death point
+		save();
 		
 		if (m_experience == 0 && isEmpty())
 			destroy();
 	}
 	
-	public void spawnHitbox()
-	{
-		if (m_location != null)
-		{
-			if (m_location.getChunk().isLoaded())
-			{
-				Location standLoc = m_location.clone().add(0, -0.75, 0);
-				m_armorStand = (ArmorStand) m_location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
-				m_armorStand.setGravity(false);
-				m_armorStand.setVisible(false);
-			}
-		}
+	public void spawnHitbox() {
+		if (m_location == null) return;
+		if (m_armorStand != null) return;
+		if (!m_location.getChunk().isLoaded()) return;
+		
+		Location standLoc = m_location.clone().add(0, -0.75, 0);
+		m_armorStand = (ArmorStand) m_location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
+		m_armorStand.setGravity(false);
+		m_armorStand.setVisible(false);
 	}
 	
-	public void despawnHitbox()
-	{
-		if (m_armorStand != null) {
-			m_armorStand.remove();
-			m_armorStand = null;
-		}
+	public void despawnHitbox() {
+		if (m_armorStand == null) return;
+		m_armorStand.remove();
+		m_armorStand = null;
 	}
-
+	
 	private Location findSafeLocation(Location playerLoc)
 	{
 		World w = playerLoc.getWorld();
@@ -216,59 +210,48 @@ public class DeathPoint
 
 	public void showContents(Player player) {player.openInventory(m_contents);}
 	
-	private void destroy()
-	{
+	private void destroy() {
 		despawnHitbox();
-		if (m_location != null)
-		{
-			for (ItemStack item : m_contents.getContents())
-			{
-		    	if (item != null)
-		    	{
-		        	m_location.getWorld().dropItemNaturally(m_location, item);
-		        	item = null;
-		    	}
-			}
-			m_location = null;
+		if (m_location == null) return;
+		for (ItemStack item : m_contents.getContents()) {
+			if (item == null) continue;
+			m_location.getWorld().dropItemNaturally(m_location, item);
+			item = null;
 		}
-		else if (!isEmpty())
-		{
-			//TODO: Stuff?
-			m_player.sendMessage("ERROR!");
-		}
-		
+		m_location = null;
 	}
 	
-	public void save() throws IOException
-	{
+	public void save() {
 		String playerName = m_player.getName();
 		UUID playerUUID = m_player.getUniqueId();
 		
 		m_plugin.getLogger().info("Saving " + playerName + "'s DeathPoint");
 		
-		File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
-		file.createNewFile();
-		YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
-		
-		saveFile.set("playerName", playerName);
-		saveFile.set("location", m_location);
-		//saveFile.set("armorStandUUID", m_armorStand.getUniqueId().toString());
-		saveFile.set("experience", Integer.valueOf(m_experience));
-		saveFile.set("contents", m_contents.getContents());
-		
-		saveFile.save(file);
+		try {
+			File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
+			file.createNewFile();
+			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
+			
+			saveFile.set("playerName", playerName);
+			saveFile.set("location", m_location);
+			saveFile.set("experience", Integer.valueOf(m_experience));
+			saveFile.set("contents", m_contents.getContents());
+			
+			saveFile.save(file);
+		}
+		catch (IOException exception) {
+			exception.printStackTrace();
+		}
 	}
 	
-	public void load()
-	{
+	public void load() {
 		String playerName = m_player.getName();
 		UUID playerUUID = m_player.getUniqueId();
 		
 		m_plugin.getLogger().info("Attempting to load " + playerName + "'s saved death point...");
 		
 		File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
-		if (file.exists())
-		{
+		if (file.exists()) {
 			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
 			
 			//Load
@@ -277,28 +260,22 @@ public class DeathPoint
 			m_experience = saveFile.getInt("experience");
 			m_contents.setContents(saveFile.getList("contents").toArray(new ItemStack[0]));
 		}
-		else
-			m_plugin.getLogger().warning("Failed. File not found.");
+		else m_plugin.getLogger().warning("Failed. File not found.");
 	}
 
-	public void particles()
-	{
+	public void particles() {
 		if (m_location == null) return;
-		//particle display portal 0.2 0.2 0.2 0.5 200 100
-		m_effect.display(0.2f, 0.2f, 0.2f, 0.5f, 100, m_location, 100.0d);
+		m_location.getWorld().spawnParticle(m_effect, m_location, 50, 0.2, 0.2, 0.2, 0.5);
 	}
 	
-	public boolean isEmpty()
-	{
+	private boolean isEmpty() {
 		for (ItemStack item: m_contents.getContents()) {
-			if (item != null) return false;
+			if (item != null && item.getType() != Material.AIR) return false;
 		}
-		
 		return true;
 	}
 
-	public void finish()
-	{
+	private void finish() {
 		final int exp = m_experience;
 		
 		m_plugin.getServer().getScheduler().scheduleSyncDelayedTask(m_plugin, new Runnable()
@@ -372,4 +349,30 @@ public class DeathPoint
 		
 		return (int)(fromLevel + fromProgress);
 	}
+
+	public Chunk getChunk() {
+		if (m_location == null) return null;
+		return m_location.getChunk();
+	}
+
+	public boolean isHitbox(Entity rightClicked) {
+		return rightClicked.equals(m_armorStand);
+	}
+
+	public void playerClicked() {
+		if (isEmpty()) {
+			finish();
+			return;
+		}
+		showContents(m_player);
+	}
+
+	public boolean isInventory(Inventory inventory) {
+		return inventory.equals(m_contents);
+	}
+
+	public void close() {
+		if (isEmpty()) finish();
+	}
+	
 }
