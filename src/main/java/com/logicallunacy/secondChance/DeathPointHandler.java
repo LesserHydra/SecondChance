@@ -107,7 +107,7 @@ class DeathPointHandler implements Listener {
 	public void onInventoryClose(InventoryCloseEvent e) {
 		Player player = (Player) e.getPlayer();
 		DeathPoint deathPoint = m_deathPoints.get(player.getName());
-		if (deathPoint.isInventory(e.getInventory())) deathPoint.close();
+		if (deathPoint.isInventory(e.getInventory())) deathPoint.destroy();
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)

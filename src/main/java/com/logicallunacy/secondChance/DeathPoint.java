@@ -142,8 +142,19 @@ class DeathPoint {
 	}
 
 	public void playerClicked() {
-		if (isEmpty()) finish();
+		dropExperience(m_experience);
+		if (isEmpty()) destroy();
 		else showContents(m_player);
+	}
+	
+	public void destroy() {
+		for (ItemStack item : m_contents.getContents()) {
+			if (item == null || item.getType() == Material.AIR) continue;
+			m_location.getWorld().dropItemNaturally(m_location, item);
+		}
+		despawnHitbox();
+		m_contents.clear();
+		m_location = null;
 	}
 
 	public boolean isInventory(Inventory inventory) {
@@ -152,10 +163,6 @@ class DeathPoint {
 	
 	public void showContents(Player player) {
 		player.openInventory(m_contents);
-	}
-
-	public void close() {
-		if (isEmpty()) finish();
 	}
 	
 	public void particles() {
@@ -174,40 +181,15 @@ class DeathPoint {
 		throw new IllegalStateException("No valid position found for deathpoint.");
 	}
 	
-	private void destroy() {
-		despawnHitbox();
-		if (m_location == null) return;
-		for (ItemStack item : m_contents.getContents()) {
-			if (item == null || item.getType() == Material.AIR) continue;
-			m_location.getWorld().dropItemNaturally(m_location, item);
-			item = null;
-		}
-		m_location = null;
-	}
-	
 	private boolean isEmpty() {
 		for (ItemStack item: m_contents.getContents()) {
 			if (item != null && item.getType() != Material.AIR) return false;
 		}
 		return true;
 	}
-
-	private void finish() {
-		final int exp = m_experience;
-		m_plugin.getServer().getScheduler().scheduleSyncDelayedTask(m_plugin, new Runnable() {
-			public void run()
-			{dropExperience(exp);}
-		}, 2);
-	}
 	
 	private void dropExperience(int xpPoints) {
-		if (xpPoints <= 0) {
-			destroy();
-			return;
-		}
-		
 		int toDrop = Util.calculateXpForNextLevel(m_player.getLevel());
-		
 		xpPoints -= toDrop;
 		
 		//Drop xp
@@ -217,6 +199,7 @@ class DeathPoint {
 		else orb.setExperience(toDrop);
 		
 		final int remaining = xpPoints;
+		if (remaining <= 0) return;
 		m_plugin.getServer().getScheduler().scheduleSyncDelayedTask(m_plugin, new Runnable() {
 			public void run()
 			{dropExperience(remaining);}
