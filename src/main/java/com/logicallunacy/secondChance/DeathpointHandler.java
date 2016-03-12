@@ -25,15 +25,38 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-class DeathPointHandler implements Listener {
+class DeathpointHandler implements Listener {
 	
-	private SecondChance plugin;
-	
+	private final SecondChance plugin;
+	private final HashMap<String, DeathPoint> m_deathPoints = new HashMap<>();
 	private BukkitTask particleTask;
-	private HashMap<String, DeathPoint> m_deathPoints = new HashMap<>();
 	
-	public DeathPointHandler(SecondChance tm) {
+	public DeathpointHandler(SecondChance tm) {
 		plugin = tm;
+	}
+	
+	public void init() {
+		for (Player player: plugin.getServer().getOnlinePlayers()) {
+			DeathPoint deathPoint = new DeathPoint(plugin, player);
+			deathPoint.load();
+			m_deathPoints.put(player.getName(), deathPoint);
+		}
+		
+		particleTask = new BukkitRunnable() { @Override public void run() {
+			for (DeathPoint deathPoint: m_deathPoints.values()) {
+				deathPoint.particles();
+			}
+		}}.runTaskTimer(plugin, 0L, 20L);
+	}
+	
+	public void deinit() {
+		for (DeathPoint deathPoint: m_deathPoints.values()) {
+			deathPoint.despawnHitbox();
+			deathPoint.save();
+		}
+		
+		particleTask.cancel();
+		m_deathPoints.clear();
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -92,7 +115,18 @@ class DeathPointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onPlayerInteractEntity(PlayerInteractAtEntityEvent e) {
+	public void onArmorStandDamage(EntityDamageEvent e) {
+		if (!(e.getEntity() instanceof ArmorStand)) return;
+		
+		for (DeathPoint deathPoint: m_deathPoints.values()) {
+			if (!deathPoint.isHitbox(e.getEntity())) continue;
+			e.setCancelled(true);
+			return;
+		}
+	}
+	
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent e) {
 		if (!(e.getRightClicked() instanceof ArmorStand)) return;
 		
 		Player player = e.getPlayer();
@@ -110,58 +144,20 @@ class DeathPointHandler implements Listener {
 		if (deathPoint.isInventory(e.getInventory())) deathPoint.destroy();
 	}
 	
-	@EventHandler(priority = EventPriority.LOWEST)
-	public void onArmorStandDamage(EntityDamageEvent e) {
-		if (!(e.getEntity() instanceof ArmorStand)) return;
-		
-		for (DeathPoint deathPoint: m_deathPoints.values()) {
-			if (!deathPoint.isHitbox(e.getEntity())) continue;
-			e.setCancelled(true);
-			return;
-		}
-	}
-	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerRespawn(final PlayerRespawnEvent e) {
-		playerSpawnEffect(e.getPlayer());
-		plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-			public void run() {
-				playerSpawnEffect(e.getPlayer());
-			}
-		}, 1);
+		new BukkitRunnable() { @Override public void run() {
+			playerSpawnEffect(e.getPlayer());
+		}}.runTaskLater(plugin, 0L);
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerPortal(PlayerPortalEvent e) {
 		playerSpawnEffect(e.getPlayer());
 	}
-
+	
 	private void playerSpawnEffect(Player player) {
 		player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 300, 9, true, false), true);
-	}
-
-	public void init() {
-		for (Player player: plugin.getServer().getOnlinePlayers()) {
-			DeathPoint deathPoint = new DeathPoint(plugin, player);
-			deathPoint.load();
-			m_deathPoints.put(player.getName(), deathPoint);
-		}
-		
-		particleTask = new BukkitRunnable() { @Override public void run() {
-			for (DeathPoint deathPoint: m_deathPoints.values()) {
-				deathPoint.particles();
-			}
-		}}.runTaskTimer(plugin, 15L, 15L);
-	}
-
-	public void deinit() {
-		for(DeathPoint deathPoint: m_deathPoints.values()) {
-			deathPoint.despawnHitbox();
-			deathPoint.save();
-		}
-		
-		particleTask.cancel();
-		m_deathPoints.clear();
 	}
 	
 }
