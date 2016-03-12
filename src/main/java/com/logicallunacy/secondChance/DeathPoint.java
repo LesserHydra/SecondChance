@@ -23,7 +23,6 @@ import org.bukkit.metadata.MetadataValue;
 class DeathPoint {
 	
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
-	private static final Particle PARTICLE_TYPE = Particle.PORTAL;
 	
 	private SecondChance m_plugin;
 	
@@ -167,7 +166,8 @@ class DeathPoint {
 	
 	public void particles() {
 		if (m_location == null) return;
-		m_location.getWorld().spawnParticle(PARTICLE_TYPE, m_location, 50, 0.2, 0.2, 0.2, 0.5);
+		m_location.getWorld().spawnParticle(Particle.PORTAL, m_location, 50, 0.2, 0.2, 0.2, 0.5);
+		m_location.getWorld().spawnParticle(Particle.END_ROD, m_location, 15, 10, 10, 10, 0.1);
 	}
 	
 	private Location findLocation() {
