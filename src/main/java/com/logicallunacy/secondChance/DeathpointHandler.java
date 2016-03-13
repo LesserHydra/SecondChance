@@ -28,7 +28,7 @@ import org.bukkit.scheduler.BukkitTask;
 class DeathpointHandler implements Listener {
 	
 	private final SecondChance plugin;
-	private final HashMap<String, DeathPoint> m_deathPoints = new HashMap<>();
+	private final HashMap<String, DeathPoint> deathPoints = new HashMap<>();
 	private BukkitTask particleTask;
 	
 	public DeathpointHandler(SecondChance tm) {
@@ -39,24 +39,24 @@ class DeathpointHandler implements Listener {
 		for (Player player: plugin.getServer().getOnlinePlayers()) {
 			DeathPoint deathPoint = new DeathPoint(plugin, player);
 			deathPoint.load();
-			m_deathPoints.put(player.getName(), deathPoint);
+			deathPoints.put(player.getName(), deathPoint);
 		}
 		
 		particleTask = new BukkitRunnable() { @Override public void run() {
-			for (DeathPoint deathPoint: m_deathPoints.values()) {
+			for (DeathPoint deathPoint: deathPoints.values()) {
 				deathPoint.particles();
 			}
 		}}.runTaskTimer(plugin, 0L, 20L);
 	}
 	
 	public void deinit() {
-		for (DeathPoint deathPoint: m_deathPoints.values()) {
+		for (DeathPoint deathPoint: deathPoints.values()) {
 			deathPoint.despawnHitbox();
 			deathPoint.save();
 		}
 		
 		particleTask.cancel();
-		m_deathPoints.clear();
+		deathPoints.clear();
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -65,14 +65,15 @@ class DeathpointHandler implements Listener {
 		DeathPoint deathPoint = new DeathPoint(plugin, player);
 		deathPoint.load();
 		deathPoint.spawnHitbox();
-		m_deathPoints.put(player.getName(), deathPoint);
+		deathPoints.put(player.getName(), deathPoint);
 		
 		playerSpawnEffect(player);
+		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerQuit(PlayerQuitEvent e) {
-		DeathPoint deathPoint = m_deathPoints.get(e.getPlayer().getName());
+		DeathPoint deathPoint = deathPoints.get(e.getPlayer().getName());
 		deathPoint.despawnHitbox();
 		deathPoint.save();
 	}
@@ -82,7 +83,7 @@ class DeathpointHandler implements Listener {
 		Player player = e.getEntity().getPlayer();
 		if (player == null || e.getKeepInventory()) return;
 		
-		DeathPoint deathPoint = m_deathPoints.get(player.getName());
+		DeathPoint deathPoint = deathPoints.get(player.getName());
 		deathPoint.createNew(player.getLocation());
 		e.setDroppedExp(0);
 		e.setKeepInventory(true);
@@ -107,14 +108,14 @@ class DeathpointHandler implements Listener {
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onChunkUnload(ChunkUnloadEvent e) {
-		for (DeathPoint deathPoint: m_deathPoints.values()) {
+		for (DeathPoint deathPoint: deathPoints.values()) {
 			if (e.getChunk().equals(deathPoint.getChunk())) deathPoint.despawnHitbox();
 		}
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onChunkLoad(ChunkLoadEvent e) {
-		for (DeathPoint deathPoint: m_deathPoints.values()) {
+		for (DeathPoint deathPoint: deathPoints.values()) {
 			if (e.getChunk().equals(deathPoint.getChunk())) deathPoint.spawnHitbox();
 		}
 	}
@@ -123,7 +124,7 @@ class DeathpointHandler implements Listener {
 	public void onArmorStandDamage(EntityDamageEvent e) {
 		if (!(e.getEntity() instanceof ArmorStand)) return;
 		
-		for (DeathPoint deathPoint: m_deathPoints.values()) {
+		for (DeathPoint deathPoint: deathPoints.values()) {
 			if (!deathPoint.isHitbox(e.getEntity())) continue;
 			e.setCancelled(true);
 			return;
@@ -135,7 +136,7 @@ class DeathpointHandler implements Listener {
 		if (!(e.getRightClicked() instanceof ArmorStand)) return;
 		
 		Player player = e.getPlayer();
-		DeathPoint deathPoint = m_deathPoints.get(player.getName());
+		DeathPoint deathPoint = deathPoints.get(player.getName());
 		
 		if (!deathPoint.isHitbox(e.getRightClicked())) return;
 		deathPoint.playerClicked();
@@ -145,7 +146,7 @@ class DeathpointHandler implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onInventoryClose(InventoryCloseEvent e) {
 		Player player = (Player) e.getPlayer();
-		DeathPoint deathPoint = m_deathPoints.get(player.getName());
+		DeathPoint deathPoint = deathPoints.get(player.getName());
 		if (deathPoint.isInventory(e.getInventory())) deathPoint.destroy();
 	}
 	

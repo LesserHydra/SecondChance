@@ -6,8 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class SecondChance extends JavaPlugin {
 	
 	//IO Stuff
-	public final File m_saveFolder = new File(getDataFolder() + File.separator + "saves");
-	
+	public final File saveFolder = new File(getDataFolder() + File.separator + "saves");
 	//Deathpoint handler
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
 	
@@ -17,7 +16,7 @@ public class SecondChance extends JavaPlugin {
 		if (!getDataFolder().exists()) {
 			getLogger().info("Creating data folders");
 			getDataFolder().mkdir();
-			if (!m_saveFolder.exists()) m_saveFolder.mkdir();
+			if (!saveFolder.exists()) saveFolder.mkdir();
 		}
 		
 		//Add online players to death point handler

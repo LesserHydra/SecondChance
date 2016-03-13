@@ -19,79 +19,77 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.MetadataValue;
+import org.bukkit.scheduler.BukkitRunnable;
 
 class DeathPoint {
 	
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
-	private SecondChance m_plugin;
+	private final SecondChance plugin;
+	private final Player player;
 	
-	private Player m_player;
-	private Location m_location;
-	private ArmorStand m_armorStand;
-	
-	//Contents
-	private Inventory m_contents;
-	private int m_experience;
-	
+	private Location location;
+	private ArmorStand hitbox;
+	private Inventory contents;
+	private int experience;
 	
 	public DeathPoint(SecondChance plugin, Player player) {
-		m_plugin = plugin;
-		m_player = player;
-		m_location = null;
-		m_contents = Bukkit.getServer().createInventory(null, INV_SIZE, "Lost Inventory");//player.getName() + "'s Lost Inventory");
-		m_experience = 0;
+		this.plugin = plugin;
+		this.player = player;
+		this.location = null;
+		this.contents = Bukkit.getServer().createInventory(null, INV_SIZE, "Lost Inventory");//player.getName() + "'s Lost Inventory");
+		this.experience = 0;
 	}
 	
 	public void save() {
-		String playerName = m_player.getName();
-		UUID playerUUID = m_player.getUniqueId();
+		String playerName = player.getName();
+		UUID playerUUID = player.getUniqueId();
 		
-		m_plugin.getLogger().info("Saving " + playerName + "'s DeathPoint");
+		plugin.getLogger().info("Saving " + playerName + "'s DeathPoint");
 		try {
-			File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
+			File file = new File(plugin.saveFolder + File.separator + playerUUID.toString() + ".yml");
 			file.createNewFile();
 			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
 			
 			saveFile.set("playerName", playerName);
-			saveFile.set("location", m_location);
-			saveFile.set("experience", Integer.valueOf(m_experience));
-			saveFile.set("contents", m_contents.getContents());
+			saveFile.set("location", location);
+			saveFile.set("experience", Integer.valueOf(experience));
+			saveFile.set("contents", contents.getContents());
 			
 			saveFile.save(file);
 		} catch (IOException exception) {
-			m_plugin.getLogger().info("FAILED!");
-			m_player.sendMessage(ChatColor.RED + "Deathpoint failed to save; dropping on the ground.");
-			m_player.sendMessage(ChatColor.RED + "Please notify a server administrator, as this should never happen.");
+			plugin.getLogger().info("FAILED!");
+			player.sendMessage(ChatColor.RED + "Deathpoint failed to save; dropping on the ground.");
+			player.sendMessage(ChatColor.RED + "Please notify a server administrator, as this should never happen.");
 			destroy();
 			exception.printStackTrace();
 		}
 	}
 	
 	public void load() {
-		String playerName = m_player.getName();
-		UUID playerUUID = m_player.getUniqueId();
+		String playerName = player.getName();
+		UUID playerUUID = player.getUniqueId();
 		
-		m_plugin.getLogger().info("Attempting to load " + playerName + "'s saved death point...");
+		plugin.getLogger().info("Attempting to load " + playerName + "'s saved death point...");
 		
-		File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
+		File file = new File(plugin.saveFolder + File.separator + playerUUID.toString() + ".yml");
 		if (file.exists()) {
 			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
 			
 			//Load
-			m_location = (Location) saveFile.get("location");
-			m_experience = saveFile.getInt("experience");
-			m_contents.setContents(saveFile.getList("contents").toArray(new ItemStack[INV_SIZE]));
+			location = (Location) saveFile.get("location");
+			experience = saveFile.getInt("experience");
+			contents.setContents(saveFile.getList("contents").toArray(new ItemStack[INV_SIZE]));
 		}
-		else m_plugin.getLogger().warning("Failed. File not found.");
+		else plugin.getLogger().warning("Failed. File not found.");
 	}
 	
 	public void createNew(Location playerLocation) {
 		destroy();
 		
-		m_location = findLocation();
+		location = findLocation();
 		
-		PlayerInventory playerInv = m_player.getInventory();
+		PlayerInventory playerInv = player.getInventory();
 		ItemStack[] inventory = playerInv.getContents();
 		ItemStack[] contentsArray = new ItemStack[INV_SIZE];
 		System.arraycopy(inventory, 9, contentsArray, 0, 27); //Main inventory
@@ -99,8 +97,8 @@ class DeathPoint {
 		System.arraycopy(inventory, 36, contentsArray, INV_SIZE - 4, 4); //Armor
 		System.arraycopy(inventory, 40, contentsArray, 36, 1); //Off hand
 		
-		m_contents.setContents(contentsArray);
-		m_experience = Util.calculateXpFromLevel(m_player.getLevel()) + Util.calculateXpFromProgress(m_player.getLevel(), m_player.getExp());
+		contents.setContents(contentsArray);
+		experience = Util.calculateXpFromLevel(player.getLevel()) + Util.calculateXpFromProgress(player.getLevel(), player.getExp());
 		
 		//Create hitbox
 		spawnHitbox();
@@ -111,68 +109,69 @@ class DeathPoint {
 		//Save death point
 		save();
 		
-		if (m_experience == 0 && isEmpty()) destroy();
+		if (experience == 0 && isEmpty()) destroy();
 	}
 	
 	public void spawnHitbox() {
-		if (m_location == null) return;
-		if (m_armorStand != null) return;
-		if (!m_location.getChunk().isLoaded()) return;
+		if (location == null) return;
+		if (hitbox != null) return;
+		if (!location.getChunk().isLoaded()) return;
 		
-		Location standLoc = m_location.clone().add(0, -0.75, 0);
-		m_armorStand = (ArmorStand) m_location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
-		m_armorStand.setGravity(false);
-		m_armorStand.setVisible(false);
+		Location standLoc = location.clone().add(0, -0.75, 0);
+		hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
+		hitbox.setGravity(false);
+		hitbox.setVisible(false);
 	}
 	
 	public void despawnHitbox() {
-		if (m_armorStand == null) return;
-		m_armorStand.remove();
-		m_armorStand = null;
+		if (hitbox == null) return;
+		hitbox.remove();
+		hitbox = null;
 	}
 	
 	public Chunk getChunk() {
-		if (m_location == null) return null;
-		return m_location.getChunk();
+		if (location == null) return null;
+		return location.getChunk();
 	}
 
 	public boolean isHitbox(Entity rightClicked) {
-		return rightClicked.equals(m_armorStand);
+		return rightClicked.equals(hitbox);
 	}
 
 	public void playerClicked() {
-		dropExperience(m_experience);
+		dropExperience(experience);
 		if (isEmpty()) destroy();
-		else showContents(m_player);
+		else showContents(player);
 	}
 	
 	public void destroy() {
-		for (ItemStack item : m_contents.getContents()) {
+		if (location == null) return;
+		for (ItemStack item : contents.getContents()) {
 			if (item == null || item.getType() == Material.AIR) continue;
-			m_location.getWorld().dropItemNaturally(m_location, item);
+			location.getWorld().dropItemNaturally(location, item);
 		}
 		despawnHitbox();
-		m_contents.clear();
-		m_location = null;
+		contents.clear();
+		location = null;
 	}
 
 	public boolean isInventory(Inventory inventory) {
-		return inventory.equals(m_contents);
+		return inventory.equals(contents);
 	}
 	
 	public void showContents(Player player) {
-		player.openInventory(m_contents);
+		player.openInventory(contents);
 	}
 	
 	public void particles() {
-		if (m_location == null) return;
-		m_location.getWorld().spawnParticle(Particle.PORTAL, m_location, 50, 0.2, 0.2, 0.2, 0.5);
-		m_location.getWorld().spawnParticle(Particle.END_ROD, m_location, 15, 10, 10, 10, 0.1);
+		if (location == null) return;
+		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
+		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
 	}
 	
 	private Location findLocation() {
-		for (MetadataValue value: m_player.getMetadata("lastSafePosition")) {
-			if (value.getOwningPlugin() != m_plugin) continue;
+		for (MetadataValue value: player.getMetadata("lastSafePosition")) {
+			if (value.getOwningPlugin() != plugin) continue;
 			Location loc = ((Location) value.value()).getBlock().getLocation();
 			loc.add(0.5, 0, 0.5);
 			return loc;
@@ -182,28 +181,27 @@ class DeathPoint {
 	}
 	
 	private boolean isEmpty() {
-		for (ItemStack item: m_contents.getContents()) {
+		for (ItemStack item: contents.getContents()) {
 			if (item != null && item.getType() != Material.AIR) return false;
 		}
 		return true;
 	}
 	
 	private void dropExperience(int xpPoints) {
-		int toDrop = Util.calculateXpForNextLevel(m_player.getLevel());
+		int toDrop = Util.calculateXpForNextLevel(player.getLevel());
 		xpPoints -= toDrop;
 		
 		//Drop xp
-		Location playerLoc = m_player.getLocation();
+		Location playerLoc = player.getLocation();
 		ExperienceOrb orb = playerLoc.getWorld().spawn(playerLoc, ExperienceOrb.class);
-		if (xpPoints < 0) orb.setExperience(toDrop + xpPoints);
-		else orb.setExperience(toDrop);
+		if (xpPoints < 0) toDrop += xpPoints;
+		orb.setExperience(toDrop);
 		
 		final int remaining = xpPoints;
 		if (remaining <= 0) return;
-		m_plugin.getServer().getScheduler().scheduleSyncDelayedTask(m_plugin, new Runnable() {
-			public void run()
-			{dropExperience(remaining);}
-		}, 2);
+		new BukkitRunnable() { @Override public void run() {
+			dropExperience(remaining);
+		}}.runTaskLater(plugin, 2L);
 	}
 	
 }
