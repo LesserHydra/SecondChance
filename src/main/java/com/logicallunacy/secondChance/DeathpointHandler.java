@@ -93,11 +93,16 @@ class DeathpointHandler implements Listener {
 		if (!((Entity)event.getPlayer()).isOnGround()) return;
 		
 		Player player = event.getPlayer();
-		Location loc = player.getLocation().add(0, 1, 0);
+		Location loc = player.getLocation();
+		//Check bottom block
+		if (loc.getBlock().getType().isSolid()) return;
+		if (loc.getBlock().isLiquid()) return;
+		//Check top block
+		loc.add(0, 1, 0);
 		if (loc.getBlock().getType().isSolid()) return;
 		if (loc.getBlock().isLiquid()) return;
 		
-		player.setMetadata("lastNonsolidGroundPosition", new FixedMetadataValue(plugin, loc));
+		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, loc));
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)

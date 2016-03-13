@@ -171,7 +171,7 @@ class DeathPoint {
 	}
 	
 	private Location findLocation() {
-		for (MetadataValue value: m_player.getMetadata("lastNonsolidGroundPosition")) {
+		for (MetadataValue value: m_player.getMetadata("lastSafePosition")) {
 			if (value.getOwningPlugin() != m_plugin) continue;
 			Location loc = ((Location) value.value()).getBlock().getLocation();
 			loc.add(0.5, 0, 0.5);
