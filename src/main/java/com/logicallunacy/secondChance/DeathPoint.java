@@ -4,372 +4,204 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Biome;
+import org.bukkit.Particle;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import com.darkblade12.particleeffect.ParticleEffect;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.scheduler.BukkitRunnable;
 
-public class DeathPoint
-{
-	ParticleEffect m_effect = ParticleEffect.PORTAL;
+class DeathPoint {
 	
-	SecondChance m_plugin;
+	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
-	Player m_player;
-	Location m_location;
-	ArmorStand m_armorStand;
+	private final SecondChance plugin;
+	private final Player player;
 	
-	//Contents
-	Inventory m_contents;
-	int m_experience;
-	//int m_level;
-	//float m_exp;
+	private Location location;
+	private ArmorStand hitbox;
+	private Inventory contents;
+	private int experience;
 	
-	
-	public DeathPoint(SecondChance plugin, Player player)
-	{
-		m_plugin = plugin;
-		m_player = player;
-		m_location = null;
-		m_contents = Bukkit.getServer().createInventory(null, 45, "Lost Inventory");//player.getName() + "'s Lost Inventory");
-		m_experience = 0;
+	public DeathPoint(SecondChance plugin, Player player) {
+		this.plugin = plugin;
+		this.player = player;
+		this.location = null;
+		this.contents = Bukkit.getServer().createInventory(null, INV_SIZE, "Lost Inventory");//player.getName() + "'s Lost Inventory");
+		this.experience = 0;
 	}
 	
-	public void createNew()
-	{
+	public void save() {
+		String playerName = player.getName();
+		UUID playerUUID = player.getUniqueId();
+		
+		plugin.getLogger().info("Saving " + playerName + "'s DeathPoint");
+		try {
+			File file = new File(plugin.saveFolder + File.separator + playerUUID.toString() + ".yml");
+			file.createNewFile();
+			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
+			
+			saveFile.set("playerName", playerName);
+			saveFile.set("location", location);
+			saveFile.set("experience", Integer.valueOf(experience));
+			saveFile.set("contents", contents.getContents());
+			
+			saveFile.save(file);
+		} catch (IOException exception) {
+			plugin.getLogger().info("FAILED!");
+			player.sendMessage(ChatColor.RED + "Deathpoint failed to save; dropping on the ground.");
+			player.sendMessage(ChatColor.RED + "Please notify a server administrator, as this should never happen.");
+			destroy();
+			exception.printStackTrace();
+		}
+	}
+	
+	public void load() {
+		String playerName = player.getName();
+		UUID playerUUID = player.getUniqueId();
+		
+		plugin.getLogger().info("Attempting to load " + playerName + "'s saved death point...");
+		
+		File file = new File(plugin.saveFolder + File.separator + playerUUID.toString() + ".yml");
+		if (file.exists()) {
+			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
+			
+			//Load
+			location = (Location) saveFile.get("location");
+			experience = saveFile.getInt("experience");
+			contents.setContents(saveFile.getList("contents").toArray(new ItemStack[INV_SIZE]));
+		}
+		else plugin.getLogger().warning("Failed. File not found.");
+	}
+	
+	public void createNew(Location playerLocation) {
 		destroy();
 		
-		m_location = findSafeLocation(m_player.getLocation());
+		location = findLocation();
 		
-		PlayerInventory playerInv = m_player.getInventory();
-		
-		ItemStack[] inventory = playerInv .getContents();
-		ItemStack[] armor = playerInv.getArmorContents();
-		ItemStack[] contentsArray = new ItemStack[45];
+		PlayerInventory playerInv = player.getInventory();
+		ItemStack[] inventory = playerInv.getContents();
+		ItemStack[] contentsArray = new ItemStack[INV_SIZE];
 		System.arraycopy(inventory, 9, contentsArray, 0, 27); //Main inventory
 		System.arraycopy(inventory, 0, contentsArray, 27, 9); //Hotbar
-		System.arraycopy(armor, 0, contentsArray, 41, 4); //Armor
+		System.arraycopy(inventory, 36, contentsArray, INV_SIZE - 4, 4); //Armor
+		System.arraycopy(inventory, 40, contentsArray, 36, 1); //Off hand
 		
-		m_contents.setContents(contentsArray);
+		contents.setContents(contentsArray);
+		experience = Util.calculateXpFromLevel(player.getLevel()) + Util.calculateXpFromProgress(player.getLevel(), player.getExp());
 		
-		m_experience = convertLevelsToPoints(m_player.getLevel(), m_player.getExp());
-		
-		//Create armor stand
+		//Create hitbox
 		spawnHitbox();
 		
 		//Clear player's inventory
 		playerInv.clear();
-		playerInv.setArmorContents(new ItemStack[4]);
 		
-		//TODO: Need some safety if the save fails
-		try {save();}
-		catch (IOException e) {e.printStackTrace();}
+		//Save death point
+		save();
 		
-		if (m_experience == 0 && isEmpty())
-			destroy();
+		if (experience == 0 && isEmpty()) destroy();
 	}
 	
-	public void spawnHitbox()
-	{
-		if (m_location != null)
-		{
-			if (m_location.getChunk().isLoaded())
-			{
-				Location standLoc = m_location.clone().add(0, -0.75, 0);
-				m_armorStand = (ArmorStand) m_location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
-				m_armorStand.setGravity(false);
-				m_armorStand.setVisible(false);
-			}
-		}
+	public void spawnHitbox() {
+		if (location == null) return;
+		if (hitbox != null) return;
+		if (!location.getChunk().isLoaded()) return;
+		
+		Location standLoc = location.clone().add(0, -0.75, 0);
+		hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
+		hitbox.setGravity(false);
+		hitbox.setVisible(false);
 	}
 	
-	public void despawnHitbox()
-	{
-		if (m_armorStand != null) {
-			m_armorStand.remove();
-			m_armorStand = null;
-		}
+	public void despawnHitbox() {
+		if (hitbox == null) return;
+		hitbox.remove();
+		hitbox = null;
 	}
-
-	private Location findSafeLocation(Location playerLoc)
-	{
-		World w = playerLoc.getWorld();
-		int x = playerLoc.getBlockX();
-		int y = playerLoc.getBlockY();
-		int z = playerLoc.getBlockZ();
-		
-		if (y < 0)
-			y = 0;
-		
-		Location bestLoc = new Location(w, x, y, z);
-		int bestLocScore = scoreLocation(bestLoc);
-		
-		while (y < 255)
-		{
-			//Middle
-			Location loc = new Location(w, x, y, z);
-			int locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			if (bestLocScore == 10 || loc.getBlock().getType() == Material.BEDROCK)
-				break;
-			
-			//Negative x
-			loc = new Location(w, x-1, y, z);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			//Positive x
-			loc = new Location(w, x+1, y, z);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			//Negative z
-			loc = new Location(w, x, y, z-1);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			//Positive z
-			loc = new Location(w, x, y, z+1);
-			locScore = scoreLocation(loc);
-			
-			if (locScore > bestLocScore)
-			{
-				bestLoc = loc;
-				bestLocScore = locScore;
-			}
-			
-			if (bestLocScore == 10)
-				break;
-			
-			y++;
-		}
-		
-		Location upLoc = bestLoc.clone().add(0.5, 1, 0.5);
-		if (scoreLocation(upLoc) == bestLocScore)
-			return upLoc;
-		else
-			return bestLoc.add(0.5, 0, 0.5);
-	}
-
-	private int scoreLocation(Location loc)
-	{
-		Material mat = loc.getBlock().getType();
-		int score = -5;
-		
-		switch (mat)
-		{
-		case AIR:				score = 10;
-			break;
-		case STATIONARY_WATER:	score = 5;
-			break;
-		case WATER:				score = 6;
-			break;
-		case STATIONARY_LAVA:	score = -10;
-			break;
-		case LAVA:				score = -9;
-			break;
-		default:
-			if (!mat.isSolid())
-				score = 10;
-			else if (mat.isTransparent())
-				score = 3;
-			else if (!mat.isOccluding())
-				score = 1;
-			break;
-		}
-		
-		if (loc.getBlock().getBiome() == Biome.SKY && loc.getY() < 32)
-			score--;
-		
-		return score;
-	}
-
-	public void showContents(Player player) {player.openInventory(m_contents);}
 	
-	private void destroy()
-	{
+	public Chunk getChunk() {
+		if (location == null) return null;
+		return location.getChunk();
+	}
+
+	public boolean isHitbox(Entity rightClicked) {
+		return rightClicked.equals(hitbox);
+	}
+
+	public void playerClicked() {
+		dropExperience(experience);
+		if (isEmpty()) destroy();
+		else showContents(player);
+	}
+	
+	public void destroy() {
+		if (location == null) return;
+		for (ItemStack item : contents.getContents()) {
+			if (item == null || item.getType() == Material.AIR) continue;
+			location.getWorld().dropItemNaturally(location, item);
+		}
 		despawnHitbox();
-		if (m_location != null)
-		{
-			for (ItemStack item : m_contents.getContents())
-			{
-		    	if (item != null)
-		    	{
-		        	m_location.getWorld().dropItemNaturally(m_location, item);
-		        	item = null;
-		    	}
-			}
-			m_location = null;
-		}
-		else if (!isEmpty())
-		{
-			//TODO: Stuff?
-			m_player.sendMessage("ERROR!");
-		}
-		
-	}
-	
-	public void save() throws IOException
-	{
-		String playerName = m_player.getName();
-		UUID playerUUID = m_player.getUniqueId();
-		
-		m_plugin.getLogger().info("Saving " + playerName + "'s DeathPoint");
-		
-		File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
-		file.createNewFile();
-		YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
-		
-		saveFile.set("playerName", playerName);
-		saveFile.set("location", m_location);
-		//saveFile.set("armorStandUUID", m_armorStand.getUniqueId().toString());
-		saveFile.set("experience", Integer.valueOf(m_experience));
-		saveFile.set("contents", m_contents.getContents());
-		
-		saveFile.save(file);
-	}
-	
-	public void load()
-	{
-		String playerName = m_player.getName();
-		UUID playerUUID = m_player.getUniqueId();
-		
-		m_plugin.getLogger().info("Attempting to load " + playerName + "'s saved death point...");
-		
-		File file = new File(m_plugin.m_saveFolder + File.separator + playerUUID.toString() + ".yml");
-		if (file.exists())
-		{
-			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
-			
-			//Load
-			m_location = (Location) saveFile.get("location");
-			//m_armorStand = getArmorStand(saveFile.getString("armorStandUUID"));
-			m_experience = saveFile.getInt("experience");
-			m_contents.setContents(saveFile.getList("contents").toArray(new ItemStack[0]));
-		}
-		else
-			m_plugin.getLogger().warning("Failed. File not found.");
+		contents.clear();
+		location = null;
 	}
 
-	public void particles()
-	{
-		if (m_location == null) return;
-		//particle display portal 0.2 0.2 0.2 0.5 200 100
-		m_effect.display(0.2f, 0.2f, 0.2f, 0.5f, 100, m_location, 100.0d);
+	public boolean isInventory(Inventory inventory) {
+		return inventory.equals(contents);
 	}
 	
-	public boolean isEmpty()
-	{
-		for (ItemStack item: m_contents.getContents()) {
-			if (item != null) return false;
+	public void showContents(Player player) {
+		player.openInventory(contents);
+	}
+	
+	public void particles() {
+		if (location == null) return;
+		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
+		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
+	}
+	
+	private Location findLocation() {
+		for (MetadataValue value: player.getMetadata("lastSafePosition")) {
+			if (value.getOwningPlugin() != plugin) continue;
+			Location loc = ((Location) value.value()).getBlock().getLocation();
+			loc.add(0.5, 0, 0.5);
+			return loc;
 		}
 		
+		throw new IllegalStateException("No valid position found for deathpoint.");
+	}
+	
+	private boolean isEmpty() {
+		for (ItemStack item: contents.getContents()) {
+			if (item != null && item.getType() != Material.AIR) return false;
+		}
 		return true;
 	}
-
-	public void finish()
-	{
-		final int exp = m_experience;
+	
+	private void dropExperience(int xpPoints) {
+		int toDrop = Util.calculateXpForNextLevel(player.getLevel());
+		xpPoints -= toDrop;
 		
-		m_plugin.getServer().getScheduler().scheduleSyncDelayedTask(m_plugin, new Runnable()
-		{
-			public void run()
-			{dropExperience(exp);}
-		}, 2);
+		//Drop xp
+		Location playerLoc = player.getLocation();
+		ExperienceOrb orb = playerLoc.getWorld().spawn(playerLoc, ExperienceOrb.class);
+		if (xpPoints < 0) toDrop += xpPoints;
+		orb.setExperience(toDrop);
+		
+		final int remaining = xpPoints;
+		if (remaining <= 0) return;
+		new BukkitRunnable() { @Override public void run() {
+			dropExperience(remaining);
+		}}.runTaskLater(plugin, 2L);
 	}
 	
-	private void dropExperience(int xpPoints)
-	{
-		if (xpPoints > 0)
-		{
-			int playerLevel = m_player.getLevel();
-			int toDrop = 0;
-			
-			if (playerLevel < 17)
-			{
-				toDrop = 2*playerLevel + 7;
-			}
-			else if (playerLevel < 32)
-			{
-				toDrop = 5*playerLevel - 38;
-			}
-			else
-			{
-				toDrop = 9*playerLevel - 158;
-			}
-			
-			xpPoints-= toDrop;
-			
-			
-			//Drop xp
-			Location playerLoc = m_player.getLocation();
-			ExperienceOrb orb = playerLoc.getWorld().spawn(playerLoc, ExperienceOrb.class);
-			if (xpPoints < 0)
-				orb.setExperience(toDrop + xpPoints);
-			else
-				orb.setExperience(toDrop);
-			
-			final int remaining = xpPoints;
-			m_plugin.getServer().getScheduler().scheduleSyncDelayedTask(m_plugin, new Runnable()
-			{
-				public void run()
-				{dropExperience(remaining);}
-			}, 2);
-		}
-		else destroy();
-	}
-	
-	private int convertLevelsToPoints(int level, double progress)
-	{
-		double fromLevel = 0;
-		double fromProgress = 0;
-		
-		if (level < 17)
-		{
-			fromLevel = level*level + 6*level;
-			fromProgress = progress*(2*level + 7);
-		}
-		else if (level < 32)
-		{
-			fromLevel = 2.5*level*level - 40.5*level + 360;
-			fromProgress = progress*(5*level - 38);
-		}
-		else
-		{
-			fromLevel = 4.5*level*level - 162.5*level + 2220;
-			fromProgress = progress*(9*level - 158);
-		}
-		
-		return (int)(fromLevel + fromProgress);
-	}
 }
