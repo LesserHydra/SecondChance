@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
+import com.roboboy.bukkitutil.ExpUtil;
 
 class DeathPoint {
 	
@@ -98,7 +99,7 @@ class DeathPoint {
 		System.arraycopy(inventory, 40, contentsArray, 36, 1); //Off hand
 		
 		contents.setContents(contentsArray);
-		experience = Util.calculateXpFromLevel(player.getLevel()) + Util.calculateXpFromProgress(player.getLevel(), player.getExp());
+		experience = ExpUtil.calculateXpFromLevel(player.getLevel()) + ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
 		
 		//Create hitbox
 		spawnHitbox();
@@ -188,7 +189,7 @@ class DeathPoint {
 	}
 	
 	private void dropExperience(int xpPoints) {
-		int toDrop = Util.calculateXpForNextLevel(player.getLevel());
+		int toDrop = ExpUtil.calculateXpForNextLevel(player.getLevel());
 		xpPoints -= toDrop;
 		
 		//Drop xp

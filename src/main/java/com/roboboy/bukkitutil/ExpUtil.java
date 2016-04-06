@@ -1,6 +1,6 @@
-package com.logicallunacy.secondChance;
+package com.roboboy.bukkitutil;
 
-public final class Util {
+public final class ExpUtil {
 	
 	/**
 	 * Calculates the amount of exp needed to reach the given level.
