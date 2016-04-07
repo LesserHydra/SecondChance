@@ -1,120 +1,95 @@
 package com.logicallunacy.secondChance;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.scheduler.BukkitRunnable;
-import com.roboboy.bukkitutil.ExpUtil;
+import com.roboboy.bukkitutil.ItemStackUtils;
 
-class DeathPoint {
+public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 	
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
-	private final SecondChance plugin;
-	private final Player player;
+	private final UUID id;
+	private final UUID playerId;
+	private final Location location;
+	private final Inventory inventory;
+	private final int experience;
 	
-	private Location location;
 	private ArmorStand hitbox;
-	private Inventory contents;
-	private int experience;
+	private boolean invalid = false;
 	
-	public DeathPoint(SecondChance plugin, Player player) {
-		this.plugin = plugin;
-		this.player = player;
-		this.location = null;
-		this.contents = Bukkit.getServer().createInventory(null, INV_SIZE, "Lost Inventory");//player.getName() + "'s Lost Inventory");
-		this.experience = 0;
+
+	public DeathPoint(UUID id, UUID playerId, Location location, ItemStack[] items, int experience) {
+		this.id = id;
+		this.playerId = playerId;
+		this.location = location;
+		this.inventory = createInventory(items);
+		this.experience = experience;
+		
+		SecondChance.logger().info("New deathpoint created at (" + location.getX() + ", " + location.getY() + ", " + location.getZ() + ")");
 	}
 	
-	public void save() {
-		String playerName = player.getName();
-		UUID playerUUID = player.getUniqueId();
+	public DeathPoint(Map<String, Object> map) {
+		this.id = UUID.fromString((String) map.get("UUID"));
+		this.playerId = UUID.fromString((String) map.get("playerUUID"));
+		this.location = (Location) map.get("location");
+		this.experience = (Integer) map.get("experience");
+		this.inventory = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
+		ItemStack[] contents = ((List<?>) map.get("contents")).toArray(new ItemStack[INV_SIZE]);
+		inventory.setContents(contents);
 		
-		plugin.getLogger().info("Saving " + playerName + "'s DeathPoint");
-		try {
-			File file = new File(plugin.saveFolder + File.separator + playerUUID.toString() + ".yml");
-			file.createNewFile();
-			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
-			
-			saveFile.set("playerName", playerName);
-			saveFile.set("location", location);
-			saveFile.set("experience", Integer.valueOf(experience));
-			saveFile.set("contents", contents.getContents());
-			
-			saveFile.save(file);
-		} catch (IOException exception) {
-			plugin.getLogger().info("FAILED!");
-			player.sendMessage(ChatColor.RED + "Deathpoint failed to save; dropping on the ground.");
-			player.sendMessage(ChatColor.RED + "Please notify a server administrator, as this should never happen.");
-			destroy();
-			exception.printStackTrace();
+		SecondChance.logger().info("Deathpoint loaded at (" + location.getX() + ", " + location.getY() + ", " + location.getZ() + ")");
+	}
+	
+	@Override
+	public Map<String, Object> serialize() {
+		Map<String, Object> result = new HashMap<>();
+		result.put("UUID", id.toString());
+		result.put("playerUUID", playerId.toString());
+		result.put("location", location);
+		result.put("experience", experience);
+		
+		ItemStack[] contents = inventory.getContents();
+		int i = contents.length;
+		while (i-- > 0) {
+			if (contents[i] != null) break;
 		}
+		result.put("contents", Arrays.copyOf(contents, i+1));
+
+		return result;
 	}
 	
-	public void load() {
-		String playerName = player.getName();
-		UUID playerUUID = player.getUniqueId();
+	private Inventory createInventory(ItemStack[] items) {
+		Inventory result = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
+		if (items == null) return result;
 		
-		plugin.getLogger().info("Attempting to load " + playerName + "'s saved death point...");
-		
-		File file = new File(plugin.saveFolder + File.separator + playerUUID.toString() + ".yml");
-		if (file.exists()) {
-			YamlConfiguration saveFile = YamlConfiguration.loadConfiguration(file);
-			
-			//Load
-			location = (Location) saveFile.get("location");
-			experience = saveFile.getInt("experience");
-			contents.setContents(saveFile.getList("contents").toArray(new ItemStack[INV_SIZE]));
-		}
-		else plugin.getLogger().warning("Failed. File not found.");
-	}
-	
-	public void createNew(Location playerLocation) {
-		destroy();
-		
-		location = findLocation();
-		
-		PlayerInventory playerInv = player.getInventory();
-		ItemStack[] inventory = playerInv.getContents();
 		ItemStack[] contentsArray = new ItemStack[INV_SIZE];
-		System.arraycopy(inventory, 9, contentsArray, 0, 27); //Main inventory
-		System.arraycopy(inventory, 0, contentsArray, 27, 9); //Hotbar
-		System.arraycopy(inventory, 36, contentsArray, INV_SIZE - 4, 4); //Armor
-		System.arraycopy(inventory, 40, contentsArray, 36, 1); //Off hand
+		System.arraycopy(items, 9, contentsArray, 0, 27); //Main inventory
+		System.arraycopy(items, 0, contentsArray, 27, 9); //Hotbar
+		System.arraycopy(items, 36, contentsArray, INV_SIZE - 4, 4); //Armor
+		System.arraycopy(items, 40, contentsArray, 36, 1); //Off hand
 		
-		contents.setContents(contentsArray);
-		experience = ExpUtil.calculateXpFromLevel(player.getLevel()) + ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
-		
-		//Create hitbox
-		spawnHitbox();
-		
-		//Clear player's inventory
-		playerInv.clear();
-		
-		//Save death point
-		save();
-		
-		if (experience == 0 && isEmpty()) destroy();
+		result.setContents(contentsArray);
+		return result;
 	}
 	
 	public void spawnHitbox() {
-		if (location == null) return;
 		if (hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
 		
@@ -122,6 +97,7 @@ class DeathPoint {
 		hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
 		hitbox.setGravity(false);
 		hitbox.setVisible(false);
+		hitbox.setInvulnerable(true);
 	}
 	
 	public void despawnHitbox() {
@@ -129,72 +105,54 @@ class DeathPoint {
 		hitbox.remove();
 		hitbox = null;
 	}
-	
-	public Chunk getChunk() {
-		if (location == null) return null;
-		return location.getChunk();
+
+	public boolean isHitbox(Entity entity) {
+		return entity == hitbox;
 	}
 
-	public boolean isHitbox(Entity rightClicked) {
-		return rightClicked.equals(hitbox);
-	}
-
-	public void playerClicked() {
-		dropExperience(experience);
-		if (isEmpty()) destroy();
-		else showContents(player);
+	public boolean playerClicked(Player clicker) {
+		if (!playerId.equals(clicker.getUniqueId())) return false;
+		
+		if (experience > 0) dropExperience(experience);
+		if (isEmpty()) {
+			destroy();
+			return true;
+		}
+		clicker.openInventory(inventory);
+		return false;
 	}
 	
 	public void destroy() {
-		if (location == null) return;
-		for (ItemStack item : contents.getContents()) {
-			if (item == null || item.getType() == Material.AIR) continue;
-			location.getWorld().dropItemNaturally(location, item);
-		}
+		if (invalid) return;
+		Arrays.stream(inventory.getContents())
+			.filter(Objects::nonNull)
+			.filter((item) -> item.getType() != Material.AIR)
+			.forEach((item) -> location.getWorld().dropItemNaturally(location, item));
+		inventory.clear();
 		despawnHitbox();
-		contents.clear();
-		location = null;
+		invalid = true;
+		DeathpointHandler.getInstance().remove(this);
 	}
 
-	public boolean isInventory(Inventory inventory) {
-		return inventory.equals(contents);
-	}
-	
-	public void showContents(Player player) {
-		player.openInventory(contents);
-	}
-	
 	public void particles() {
 		if (location == null) return;
 		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
 		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
 	}
 	
-	private Location findLocation() {
-		for (MetadataValue value: player.getMetadata("lastSafePosition")) {
-			if (value.getOwningPlugin() != plugin) continue;
-			Location loc = ((Location) value.value()).getBlock().getLocation();
-			loc.add(0.5, 0, 0.5);
-			return loc;
-		}
-		
-		throw new IllegalStateException("No valid position found for deathpoint.");
-	}
-	
 	private boolean isEmpty() {
-		for (ItemStack item: contents.getContents()) {
-			if (item != null && item.getType() != Material.AIR) return false;
-		}
-		return true;
+		return !Arrays.stream(inventory.getContents())
+				.anyMatch(ItemStackUtils::isValid);
 	}
 	
 	private void dropExperience(int xpPoints) {
-		int toDrop = ExpUtil.calculateXpForNextLevel(player.getLevel());
+		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
+		orb.setExperience(xpPoints);
+		/*int toDrop = ExpUtil.calculateXpForNextLevel(player.getLevel());
 		xpPoints -= toDrop;
 		
 		//Drop xp
-		Location playerLoc = player.getLocation();
-		ExperienceOrb orb = playerLoc.getWorld().spawn(playerLoc, ExperienceOrb.class);
+		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
 		if (xpPoints < 0) toDrop += xpPoints;
 		orb.setExperience(toDrop);
 		
@@ -202,7 +160,24 @@ class DeathPoint {
 		if (remaining <= 0) return;
 		new BukkitRunnable() { @Override public void run() {
 			dropExperience(remaining);
-		}}.runTaskLater(plugin, 2L);
+		}}.runTaskLater(plugin, 2L);*/
 	}
 	
+	@Override
+	public Inventory getInventory() {
+		return inventory;
+	}
+	
+	public Location getLocation() {
+		return location.clone();
+	}
+	
+	public UUID getOwnerUUID() {
+		return playerId;
+	}
+	
+	public UUID getUUID() {
+		return id;
+	}
+
 }

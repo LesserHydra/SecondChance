@@ -1,6 +1,11 @@
 package com.logicallunacy.secondChance;
 
-import java.util.HashMap;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.Optional;
+import java.util.UUID;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -14,79 +19,114 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.event.world.WorldSaveEvent;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import com.roboboy.bukkitutil.ExpUtil;
+import com.roboboy.bukkitutil.ItemStackUtils;
 
 class DeathpointHandler implements Listener {
 	
-	private final SecondChance plugin;
-	private final HashMap<String, DeathPoint> deathPoints = new HashMap<>();
+	private static final DeathpointHandler instance = new DeathpointHandler();
+	
+	private final Deque<DeathPoint> deathpoints = new LinkedList<>();
+	private SecondChance plugin;
 	private BukkitTask particleTask;
 	
-	public DeathpointHandler(SecondChance tm) {
-		plugin = tm;
+	private DeathpointHandler() {}
+	
+	public static DeathpointHandler getInstance() {
+		return instance;
 	}
 	
-	public void init() {
-		for (Player player: plugin.getServer().getOnlinePlayers()) {
-			DeathPoint deathPoint = new DeathPoint(plugin, player);
-			deathPoint.load();
-			deathPoints.put(player.getName(), deathPoint);
-		}
+	public void init(SecondChance plugin) {
+		this.plugin = plugin;
+		deathpoints.addAll(plugin.saveHandler.getAll());
+		deathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
 		
 		particleTask = new BukkitRunnable() { @Override public void run() {
-			for (DeathPoint deathPoint: deathPoints.values()) {
-				deathPoint.particles();
-			}
+			deathpoints.forEach(point -> point.particles());
 		}}.runTaskTimer(plugin, 0L, 20L);
 	}
 	
 	public void deinit() {
-		for (DeathPoint deathPoint: deathPoints.values()) {
-			deathPoint.despawnHitbox();
-			deathPoint.save();
-		}
-		
 		particleTask.cancel();
-		deathPoints.clear();
+
+		plugin.saveHandler.putAll(deathpoints);
+		saveDeathpoints();
+		deathpoints.forEach(deathPoint -> deathPoint.despawnHitbox());
+		deathpoints.clear();
+	}
+	
+	public void panic() {
+		deathpoints.forEach(point -> point.destroy());
+		deathpoints.clear();
+	}
+	
+	public void saveDeathpoints() {
+		try {
+			plugin.saveHandler.save();
+		} catch (IOException e) {
+			//TODO: Can anything else be done?
+			plugin.getLogger().severe("Could not save deathpoints!");
+			e.printStackTrace();
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerJoin(PlayerJoinEvent e) {
-		Player player = e.getPlayer();
-		DeathPoint deathPoint = new DeathPoint(plugin, player);
-		deathPoint.load();
-		deathPoint.spawnHitbox();
-		deathPoints.put(player.getName(), deathPoint);
-		
-		playerSpawnEffect(player);
+	public void onWorldSave(WorldSaveEvent event) {
+		deathpoints.stream()
+				.filter(point -> point.getLocation().getWorld().equals(event.getWorld()))
+				.forEach(plugin.saveHandler::put);
+		saveDeathpoints();
+	}
+	
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPlayerJoin(PlayerJoinEvent event) {
+		Player player = event.getPlayer();
 		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerQuit(PlayerQuitEvent e) {
-		DeathPoint deathPoint = deathPoints.get(e.getPlayer().getName());
-		deathPoint.despawnHitbox();
-		deathPoint.save();
-	}
-	
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerDeath(PlayerDeathEvent e) {
-		Player player = e.getEntity().getPlayer();
-		if (player == null || e.getKeepInventory()) return;
+	public void onPlayerDeath(PlayerDeathEvent event) {
+		Player player = event.getEntity().getPlayer();
+		if (player == null) return;
 		
-		DeathPoint deathPoint = deathPoints.get(player.getName());
-		deathPoint.createNew(player.getLocation());
-		e.setDroppedExp(0);
-		e.setKeepInventory(true);
+		//Destroy old deathpoint
+		Optional<DeathPoint> old = deathpoints.stream()
+				.filter(point -> point.getOwnerUUID().equals(player.getUniqueId()))
+				.findFirst();
+		if (old.isPresent()) old.get().destroy();
+		
+		//Get location
+		Location location = findLocation(player);
+		
+		//Get items, if applicable
+		ItemStack[] itemsToHold = null;
+		if (!event.getKeepInventory()) {
+			itemsToHold = player.getInventory().getContents();
+			event.getDrops().removeAll(Arrays.asList(itemsToHold));
+			if (!Arrays.stream(itemsToHold).anyMatch(ItemStackUtils::isValid)) itemsToHold = null;
+		}
+		
+		//Get exp, if applicable
+		int exp = 0;
+		if (!event.getKeepLevel()) {
+			exp = ExpUtil.calculateXpFromLevel(player.getLevel())
+					+ ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
+			event.setDroppedExp(0);
+		}
+		
+		//Create if not empty
+		if (itemsToHold == null && exp == 0) return;
+		DeathPoint newPoint = new DeathPoint(UUID.randomUUID(), player.getUniqueId(), location, itemsToHold, exp);
+		newPoint.spawnHitbox();
+		deathpoints.add(newPoint);
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -107,64 +147,73 @@ class DeathpointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onChunkUnload(ChunkUnloadEvent e) {
-		for (DeathPoint deathPoint: deathPoints.values()) {
-			if (e.getChunk().equals(deathPoint.getChunk())) deathPoint.despawnHitbox();
-		}
+	public void onChunkUnload(ChunkUnloadEvent event) {
+		deathpoints.stream()
+			.filter((point) -> event.getChunk().equals(point.getLocation().getChunk()))
+			.forEach((point) -> point.despawnHitbox());
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onChunkLoad(ChunkLoadEvent e) {
-		for (DeathPoint deathPoint: deathPoints.values()) {
-			if (e.getChunk().equals(deathPoint.getChunk())) deathPoint.spawnHitbox();
-		}
+	public void onChunkLoad(ChunkLoadEvent event) {
+		deathpoints.stream()
+				.filter((point) -> event.getChunk().equals(point.getLocation().getChunk()))
+				.forEach((point) -> point.spawnHitbox());
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onArmorStandDamage(EntityDamageEvent e) {
-		if (!(e.getEntity() instanceof ArmorStand)) return;
+	public void onArmorStandDamage(EntityDamageEvent event) {
+		if (!(event.getEntity() instanceof ArmorStand)) return;
 		
-		for (DeathPoint deathPoint: deathPoints.values()) {
-			if (!deathPoint.isHitbox(e.getEntity())) continue;
-			e.setCancelled(true);
-			return;
-		}
+		Optional<DeathPoint> deathPoint = deathpoints.stream()
+				.filter(point -> point.isHitbox(event.getEntity()))
+				.findAny();
+		if (!deathPoint.isPresent()) return;
+		event.setCancelled(true);
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent e) {
-		if (!(e.getRightClicked() instanceof ArmorStand)) return;
+	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
+		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
-		Player player = e.getPlayer();
-		DeathPoint deathPoint = deathPoints.get(player.getName());
-		
-		if (!deathPoint.isHitbox(e.getRightClicked())) return;
-		deathPoint.playerClicked();
-		e.setCancelled(true);
+		Optional<DeathPoint> deathpoint = deathpoints.stream()
+				.filter((point) -> point.isHitbox(event.getRightClicked()))
+				.findAny();
+		if (!deathpoint.isPresent()) return;
+		deathpoint.get().playerClicked(event.getPlayer());
+		event.setCancelled(true);
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onInventoryClose(InventoryCloseEvent e) {
-		Player player = (Player) e.getPlayer();
-		DeathPoint deathPoint = deathPoints.get(player.getName());
-		if (deathPoint.isInventory(e.getInventory())) deathPoint.destroy();
+	public void onInventoryClose(InventoryCloseEvent event) {
+		InventoryHolder holder = event.getInventory().getHolder();
+		if (!(holder instanceof DeathPoint)) return;
+		DeathPoint deathpoint = (DeathPoint) holder;
+		deathpoint.destroy();
 	}
 	
-	@EventHandler(priority = EventPriority.MONITOR)
+	public void remove(DeathPoint deathpoint) {
+		deathpoints.remove(deathpoint);
+		plugin.saveHandler.remove(deathpoint);
+	}
+	
+	private Location findLocation(Player player) {
+		Location loc = (Location) player.getMetadata("lastSafePosition").stream()
+				.filter(value -> value.getOwningPlugin() == plugin)
+				.findFirst().get().value();
+		return loc.getBlock().getLocation().add(0.5, 0, 0.5);
+	}
+	
+	/*@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerRespawn(final PlayerRespawnEvent e) {
 		new BukkitRunnable() { @Override public void run() {
 			playerSpawnEffect(e.getPlayer());
 		}}.runTaskLater(plugin, 0L);
-	}
+	}*/
 	
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerPortal(PlayerPortalEvent e) {
-		playerSpawnEffect(e.getPlayer());
-	}
-	
-	private void playerSpawnEffect(Player player) {
+	//TODO: New plugin
+	/*private void playerSpawnEffect(Player player) {
 		player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 300, 9, true, false), true);
-	}
+	}*/
 	
 }
 
