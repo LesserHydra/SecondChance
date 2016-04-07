@@ -15,7 +15,6 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -28,8 +27,9 @@ public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 	private final UUID id;
 	private final UUID playerId;
 	private final Location location;
+	
 	private final Inventory inventory;
-	private final int experience;
+	private int experience;
 	
 	private ArmorStand hitbox;
 	private boolean invalid = false;
@@ -74,21 +74,7 @@ public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 
 		return result;
 	}
-	
-	private Inventory createInventory(ItemStack[] items) {
-		Inventory result = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
-		if (items == null) return result;
-		
-		ItemStack[] contentsArray = new ItemStack[INV_SIZE];
-		System.arraycopy(items, 9, contentsArray, 0, 27); //Main inventory
-		System.arraycopy(items, 0, contentsArray, 27, 9); //Hotbar
-		System.arraycopy(items, 36, contentsArray, INV_SIZE - 4, 4); //Armor
-		System.arraycopy(items, 40, contentsArray, 36, 1); //Off hand
-		
-		result.setContents(contentsArray);
-		return result;
-	}
-	
+
 	public void spawnHitbox() {
 		if (hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
@@ -105,22 +91,6 @@ public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 		hitbox.remove();
 		hitbox = null;
 	}
-
-	public boolean isHitbox(Entity entity) {
-		return entity == hitbox;
-	}
-
-	public boolean playerClicked(Player clicker) {
-		if (!playerId.equals(clicker.getUniqueId())) return false;
-		
-		if (experience > 0) dropExperience(experience);
-		if (isEmpty()) {
-			destroy();
-			return true;
-		}
-		clicker.openInventory(inventory);
-		return false;
-	}
 	
 	public void destroy() {
 		if (invalid) return;
@@ -131,23 +101,12 @@ public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 		inventory.clear();
 		despawnHitbox();
 		invalid = true;
-		DeathpointHandler.getInstance().remove(this);
-	}
-
-	public void particles() {
-		if (location == null) return;
-		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
-		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
 	}
 	
-	private boolean isEmpty() {
-		return !Arrays.stream(inventory.getContents())
-				.anyMatch(ItemStackUtils::isValid);
-	}
-	
-	private void dropExperience(int xpPoints) {
+	public void dropExperience() {
 		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
-		orb.setExperience(xpPoints);
+		orb.setExperience(experience);
+		experience = 0;
 		/*int toDrop = ExpUtil.calculateXpForNextLevel(player.getLevel());
 		xpPoints -= toDrop;
 		
@@ -161,6 +120,25 @@ public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 		new BukkitRunnable() { @Override public void run() {
 			dropExperience(remaining);
 		}}.runTaskLater(plugin, 2L);*/
+	}
+	
+	public void runParticles() {
+		if (location == null) return;
+		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
+		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
+	}
+	
+	public boolean isEmpty() {
+		return !Arrays.stream(inventory.getContents())
+				.anyMatch(ItemStackUtils::isValid);
+	}
+	
+	public boolean isValid() {
+		return !invalid;
+	}
+	
+	public boolean isHitbox(Entity entity) {
+		return entity == hitbox;
 	}
 	
 	@Override
@@ -178,6 +156,31 @@ public class DeathPoint implements InventoryHolder, ConfigurationSerializable {
 	
 	public UUID getUUID() {
 		return id;
+	}
+	
+	@Override
+	public int hashCode() {
+		return 101 * id.hashCode();
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof DeathPoint)) return false;
+		return id.equals(((DeathPoint) obj).getUUID());
+	}
+	
+	private Inventory createInventory(ItemStack[] items) {
+		Inventory result = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
+		if (items == null) return result;
+		
+		ItemStack[] contentsArray = new ItemStack[INV_SIZE];
+		System.arraycopy(items, 9, contentsArray, 0, 27); //Main inventory
+		System.arraycopy(items, 0, contentsArray, 27, 9); //Hotbar
+		System.arraycopy(items, 36, contentsArray, INV_SIZE - 4, 4); //Armor
+		System.arraycopy(items, 40, contentsArray, 36, 1); //Off hand
+		
+		result.setContents(contentsArray);
+		return result;
 	}
 
 }

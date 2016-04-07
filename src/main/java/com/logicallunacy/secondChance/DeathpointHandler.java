@@ -50,7 +50,7 @@ class DeathpointHandler implements Listener {
 		deathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
 		
 		particleTask = new BukkitRunnable() { @Override public void run() {
-			deathpoints.forEach(point -> point.particles());
+			deathpoints.forEach(point -> point.runParticles());
 		}}.runTaskTimer(plugin, 0L, 20L);
 	}
 	
@@ -175,12 +175,22 @@ class DeathpointHandler implements Listener {
 	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
 		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
-		Optional<DeathPoint> deathpoint = deathpoints.stream()
+		Optional<DeathPoint> found = deathpoints.stream()
 				.filter((point) -> point.isHitbox(event.getRightClicked()))
 				.findAny();
-		if (!deathpoint.isPresent()) return;
-		deathpoint.get().playerClicked(event.getPlayer());
+		if (!found.isPresent()) return;
 		event.setCancelled(true);
+		
+		Player player = event.getPlayer();
+		DeathPoint deathpoint = found.get();
+		if (player.getUniqueId().equals(deathpoint.getOwnerUUID())) {
+			deathpoint.dropExperience();
+			if (deathpoint.isEmpty()) {
+				deathpoint.destroy();
+				remove(deathpoint);
+			}
+			else player.openInventory(deathpoint.getInventory());
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -188,7 +198,12 @@ class DeathpointHandler implements Listener {
 		InventoryHolder holder = event.getInventory().getHolder();
 		if (!(holder instanceof DeathPoint)) return;
 		DeathPoint deathpoint = (DeathPoint) holder;
-		deathpoint.destroy();
+		
+		if (deathpoint.isValid()) {
+			deathpoint.destroy();
+			remove(deathpoint);
+		}
+		
 	}
 	
 	public void remove(DeathPoint deathpoint) {
