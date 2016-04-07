@@ -19,26 +19,26 @@ class SaveHandler {
 		this.save = YamlConfiguration.loadConfiguration(file);
 	}
 	
-	public void put(DeathPoint deathpoint) {
-		save.set(deathpoint.getUUID().toString(), deathpoint);
+	public void put(Deathpoint deathpoint) {
+		save.set(deathpoint.getUniqueId().toString(), deathpoint);
 	}
 	
-	public void putAll(Collection<DeathPoint> deathpoints) {
-		deathpoints.forEach(deathpoint -> save.set(deathpoint.getUUID().toString(), deathpoint));
+	public void putAll(Collection<Deathpoint> deathpoints) {
+		deathpoints.forEach(deathpoint -> save.set(deathpoint.getUniqueId().toString(), deathpoint));
 	}
 	
-	public void remove(DeathPoint deathpoint) {
-		save.set(deathpoint.getUUID().toString(), null);
+	public void remove(Deathpoint deathpoint) {
+		save.set(deathpoint.getUniqueId().toString(), null);
 	}
 	
 	public void save() throws IOException {
 		save.save(file);
 	}
 	
-	public Collection<DeathPoint> getAll() {
+	public Collection<Deathpoint> getAll() {
 		return save.getValues(false).values().stream()
-				.filter(obj -> (obj instanceof DeathPoint))
-				.map(point -> (DeathPoint) point)
+				.filter(obj -> (obj instanceof Deathpoint))
+				.map(point -> (Deathpoint) point)
 				.collect(Collectors.toList());
 	}
 	

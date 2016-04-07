@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Optional;
-import java.util.UUID;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -25,6 +24,7 @@ import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import com.roboboy.bukkitutil.ExpUtil;
@@ -34,8 +34,8 @@ class DeathpointHandler implements Listener {
 	
 	private static final DeathpointHandler instance = new DeathpointHandler();
 	
-	private final Deque<DeathPoint> deathpoints = new LinkedList<>();
-	private SecondChance plugin;
+	private final Deque<Deathpoint> deathpoints = new LinkedList<>();
+	private final SecondChance plugin;
 	private BukkitTask particleTask;
 	
 	private DeathpointHandler() {}
@@ -98,7 +98,7 @@ class DeathpointHandler implements Listener {
 		if (player == null) return;
 		
 		//Destroy old deathpoint
-		Optional<DeathPoint> old = deathpoints.stream()
+		Optional<Deathpoint> old = deathpoints.stream()
 				.filter(point -> point.getOwnerUUID().equals(player.getUniqueId()))
 				.findFirst();
 		if (old.isPresent()) old.get().destroy();
@@ -124,7 +124,7 @@ class DeathpointHandler implements Listener {
 		
 		//Create if not empty
 		if (itemsToHold == null && exp == 0) return;
-		DeathPoint newPoint = new DeathPoint(UUID.randomUUID(), player.getUniqueId(), location, itemsToHold, exp);
+		Deathpoint newPoint = new Deathpoint(player, location, itemsToHold, exp);
 		newPoint.spawnHitbox();
 		deathpoints.add(newPoint);
 	}
@@ -164,10 +164,10 @@ class DeathpointHandler implements Listener {
 	public void onArmorStandDamage(EntityDamageEvent event) {
 		if (!(event.getEntity() instanceof ArmorStand)) return;
 		
-		Optional<DeathPoint> deathPoint = deathpoints.stream()
-				.filter(point -> point.isHitbox(event.getEntity()))
-				.findAny();
-		if (!deathPoint.isPresent()) return;
+		Optional<MetadataValue> found = event.getEntity().getMetadata("deathpoint")
+				.stream().filter(meta -> meta.getOwningPlugin() == plugin).findAny();
+		if (!found.isPresent()) return;
+		
 		event.setCancelled(true);
 	}
 	
@@ -175,15 +175,14 @@ class DeathpointHandler implements Listener {
 	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
 		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
-		Optional<DeathPoint> found = deathpoints.stream()
-				.filter((point) -> point.isHitbox(event.getRightClicked()))
-				.findAny();
+		Optional<MetadataValue> found = event.getRightClicked().getMetadata("deathpoint")
+				.stream().filter(meta -> meta.getOwningPlugin() == plugin).findAny();
 		if (!found.isPresent()) return;
 		event.setCancelled(true);
 		
 		Player player = event.getPlayer();
-		DeathPoint deathpoint = found.get();
-		if (player.getUniqueId().equals(deathpoint.getOwnerUUID())) {
+		Deathpoint deathpoint = (Deathpoint) found.get().value();
+		if (player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) {
 			deathpoint.dropExperience();
 			if (deathpoint.isEmpty()) {
 				deathpoint.destroy();
@@ -196,8 +195,8 @@ class DeathpointHandler implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onInventoryClose(InventoryCloseEvent event) {
 		InventoryHolder holder = event.getInventory().getHolder();
-		if (!(holder instanceof DeathPoint)) return;
-		DeathPoint deathpoint = (DeathPoint) holder;
+		if (!(holder instanceof Deathpoint)) return;
+		Deathpoint deathpoint = (Deathpoint) holder;
 		
 		if (deathpoint.isValid()) {
 			deathpoint.destroy();
@@ -206,7 +205,7 @@ class DeathpointHandler implements Listener {
 		
 	}
 	
-	public void remove(DeathPoint deathpoint) {
+	public void remove(Deathpoint deathpoint) {
 		deathpoints.remove(deathpoint);
 		plugin.saveHandler.remove(deathpoint);
 	}

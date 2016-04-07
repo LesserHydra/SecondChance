@@ -24,7 +24,7 @@ public class SecondChance extends JavaPlugin {
 			getDataFolder().mkdir();
 		}
 		
-		ConfigurationSerialization.registerClass(DeathPoint.class, "DeathPoint");
+		ConfigurationSerialization.registerClass(Deathpoint.class, "Deathpoint");
 		
 		try {saveHandler.load(getDataFolder() + File.separator + "save.yml");}
 		catch (IOException e) {
@@ -52,7 +52,7 @@ public class SecondChance extends JavaPlugin {
 			e.printStackTrace();
 		}
 		
-		ConfigurationSerialization.unregisterClass(DeathPoint.class);
+		ConfigurationSerialization.unregisterClass(Deathpoint.class);
 		
 		plugin = null;
 	}
