@@ -11,8 +11,9 @@ public class SecondChance extends JavaPlugin {
 	
 	private static Plugin plugin;
 	
-	private final DeathpointHandler deathpointHandler = DeathpointHandler.getInstance();
+	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
 	public final SaveHandler saveHandler = new SaveHandler();
+	
 	
 	@Override
 	public void onEnable() {
@@ -34,7 +35,7 @@ public class SecondChance extends JavaPlugin {
 			return;
 		}
 		
-		deathpointHandler.init(this);
+		deathpointHandler.init();
 		
 		//Register listener events
 		getServer().getPluginManager().registerEvents(deathpointHandler, this);
@@ -47,7 +48,7 @@ public class SecondChance extends JavaPlugin {
 		try {
 			saveHandler.save();
 		} catch (IOException e) {
-			getLogger().severe("Could not save deathpoints! Droppinp on the ground as a last-ditch.");
+			getLogger().severe("Could not save deathpoints! Dropping on the ground as a last-ditch.");
 			deathpointHandler.panic();
 			e.printStackTrace();
 		}

@@ -32,21 +32,19 @@ import com.roboboy.bukkitutil.ItemStackUtils;
 
 class DeathpointHandler implements Listener {
 	
-	private static final DeathpointHandler instance = new DeathpointHandler();
-	
 	private final Deque<Deathpoint> deathpoints = new LinkedList<>();
 	private final SecondChance plugin;
 	private BukkitTask particleTask;
 	
-	private DeathpointHandler() {}
 	
-	public static DeathpointHandler getInstance() {
-		return instance;
+	public DeathpointHandler(SecondChance plugin) {
+		this.plugin = plugin;
 	}
 	
-	public void init(SecondChance plugin) {
-		this.plugin = plugin;
-		deathpoints.addAll(plugin.saveHandler.getAll());
+	public void init() {
+		plugin.saveHandler.getAll().stream()
+				.sorted((p1, p2) -> p1.getCreationInstant().compareTo(p2.getCreationInstant()))
+				.forEachOrdered(deathpoints::add);
 		deathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
 		
 		particleTask = new BukkitRunnable() { @Override public void run() {
@@ -97,11 +95,11 @@ class DeathpointHandler implements Listener {
 		Player player = event.getEntity().getPlayer();
 		if (player == null) return;
 		
-		//Destroy old deathpoint
-		Optional<Deathpoint> old = deathpoints.stream()
-				.filter(point -> point.getOwnerUUID().equals(player.getUniqueId()))
-				.findFirst();
-		if (old.isPresent()) old.get().destroy();
+		//Destroy old deathpoint(s)
+		//TODO: Config option
+		deathpoints.stream()
+				.filter(point -> point.getOwnerUniqueId().equals(player.getUniqueId()))
+				.forEach(Deathpoint::destroy);
 		
 		//Get location
 		Location location = findLocation(player);
@@ -116,7 +114,7 @@ class DeathpointHandler implements Listener {
 		
 		//Get exp, if applicable
 		int exp = 0;
-		if (!event.getKeepLevel()) {
+		if (!event.getKeepLevel()) { //FIXME: Still goes when gamerule keepInventory is true?
 			exp = ExpUtil.calculateXpFromLevel(player.getLevel())
 					+ ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
 			event.setDroppedExp(0);
@@ -130,7 +128,7 @@ class DeathpointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerMove(PlayerMoveEvent event) {
+	public void setLastSafePosition(PlayerMoveEvent event) {
 		if (!((Entity)event.getPlayer()).isOnGround()) return;
 		
 		Player player = event.getPlayer();
