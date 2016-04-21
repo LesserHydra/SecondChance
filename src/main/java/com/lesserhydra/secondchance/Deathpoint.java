@@ -1,4 +1,4 @@
-package com.logicallunacy.secondChance;
+package com.lesserhydra.secondchance;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -20,7 +20,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
-import com.roboboy.bukkitutil.ItemStackUtils;
+import com.lesserhydra.bukkitutil.ItemStackUtils;
 
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	

@@ -1,4 +1,4 @@
-package com.roboboy.bukkitutil;
+package com.lesserhydra.bukkitutil;
 
 public final class ExpUtil {
 	

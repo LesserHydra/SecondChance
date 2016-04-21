@@ -1,4 +1,4 @@
-package com.logicallunacy.secondChance;
+package com.lesserhydra.secondchance;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,8 +27,8 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import com.roboboy.bukkitutil.ExpUtil;
-import com.roboboy.bukkitutil.ItemStackUtils;
+import com.lesserhydra.bukkitutil.ExpUtil;
+import com.lesserhydra.bukkitutil.ItemStackUtils;
 
 class DeathpointHandler implements Listener {
 	

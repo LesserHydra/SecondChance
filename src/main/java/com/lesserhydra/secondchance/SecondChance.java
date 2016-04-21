@@ -1,4 +1,4 @@
-package com.logicallunacy.secondChance;
+package com.lesserhydra.secondchance;
 
 import java.io.File;
 import java.io.IOException;

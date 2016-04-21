@@ -1,4 +1,4 @@
-package com.roboboy.bukkitutil;
+package com.lesserhydra.bukkitutil;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
