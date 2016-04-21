@@ -10,7 +10,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 
 version = generateVersion('0.2')
 String pluginName = 'SecondChance'
-String pluginMain = 'com.logicallunacy.secondChance.SecondChance'
+String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
 String author = 'Roboboy'
 
 repositories {
