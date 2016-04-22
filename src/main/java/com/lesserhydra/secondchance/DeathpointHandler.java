@@ -38,6 +38,7 @@ class DeathpointHandler implements Listener {
 	private final Map<String, Deque<Deathpoint>> deathpoints = new HashMap<>();
 	private final SecondChance plugin;
 	
+	
 	public DeathpointHandler(SecondChance plugin) {
 		this.plugin = plugin;
 	}
@@ -192,7 +193,6 @@ class DeathpointHandler implements Listener {
 			deathpoint.destroy();
 			remove(deathpoint);
 		}
-		
 	}
 	
 	private void scheduleRemove(Deathpoint deathpoint) {
