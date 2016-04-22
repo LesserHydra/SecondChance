@@ -50,6 +50,7 @@ class DeathpointHandler implements Listener {
 		deathpoints.values().stream()
 				.flatMap(Collection::stream)
 				.forEach(Deathpoint::despawnHitbox);
+		deathpoints.clear();
 	}
 	
 	public void initWorld(World world) {
@@ -141,7 +142,7 @@ class DeathpointHandler implements Listener {
 	public void onChunkUnload(ChunkUnloadEvent event) {
 		deathpoints.get(event.getWorld().getName()).stream()
 			.filter((point) -> event.getChunk().equals(point.getLocation().getChunk()))
-			.forEach(Deathpoint::spawnHitbox);
+			.forEach(Deathpoint::despawnHitbox);
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
