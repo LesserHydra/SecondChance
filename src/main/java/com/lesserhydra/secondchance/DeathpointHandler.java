@@ -13,10 +13,12 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -153,13 +155,35 @@ class DeathpointHandler implements Listener {
 	
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onArmorStandDamage(EntityDamageEvent event) {
-		if (!(event.getEntity() instanceof ArmorStand)) return;
+		if (event.getEntityType() != EntityType.ARMOR_STAND) return;
 		
-		Optional<MetadataValue> found = event.getEntity().getMetadata("deathpoint")
-				.stream().filter(meta -> meta.getOwningPlugin() == plugin).findAny();
+		Optional<MetadataValue> found = event.getEntity().getMetadata("deathpoint").stream()
+				.filter(meta -> meta.getOwningPlugin() == plugin)
+				.findAny();
 		if (!found.isPresent()) return;
 		
 		event.setCancelled(true);
+	}
+	
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onArmorStandPunched(EntityDamageByEntityEvent event) {
+		if (!options.breakOnHit) return;
+		if (event.getEntityType() != EntityType.ARMOR_STAND) return;
+		if (event.getDamager().getType() != EntityType.PLAYER) return;
+		
+		Optional<Deathpoint> found = event.getEntity().getMetadata("deathpoint").stream()
+				.filter(meta -> meta.getOwningPlugin() == plugin)
+				.map(meta -> (Deathpoint) meta.value())
+				.findAny();
+		if (!found.isPresent()) return;
+		Deathpoint deathpoint = found.get();
+		Player punched = (Player) event.getDamager();
+		
+		if (options.isProtected && !punched.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		deathpoint.dropItems();
+		deathpoint.dropExperience();
+		deathpoint.destroy();
+		remove(deathpoint);	
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
