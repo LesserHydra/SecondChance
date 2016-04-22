@@ -2,53 +2,71 @@ package com.lesserhydra.secondchance;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 class SaveHandler {
 
-	private File file;
-	private FileConfiguration save;
+	public SaveHandler(File saveDirectory, World world) {
+		file = new File(saveDirectory + File.separator + world.getName() + ".yml");
+	}
 	
-	
-	//TODO: Handle worlds separately (File per world/dimension?)
-	//		If the server switches worlds, the previous world's deathpoints should be uneffected.
-	//		However, if a player has a deathpoint in the Nether and dies in the overworld, the
-	//		Nether deathpoint should be destroyed. How to differentiate between worlds and
-	//		dimensions? Or perhaps, deathpoints in loaded worlds should be destroyed?
-	public void load(String filePath) throws IOException {
-		this.file = new File(filePath);
-		file.createNewFile();
-		this.save = YamlConfiguration.loadConfiguration(file);
+	public void load() {
+		//TODO: Handle gracefully
+		try {
+			file.createNewFile();
+			this.save = YamlConfiguration.loadConfiguration(file);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void put(Deathpoint deathpoint) {
-		save.set(getKeyFromDeathpoint(deathpoint), deathpoint);
+		List<Deathpoint> deathpointList = stream()
+				.filter(point -> !deathpoint.equals(point))
+				.collect(Collectors.toList());
+		deathpointList.add(deathpoint);
+		save.set("deathpoints", deathpointList);
 	}
 	
 	public void putAll(Collection<Deathpoint> deathpoints) {
-		deathpoints.forEach(this::put);
+		List<Deathpoint> deathpointList = stream()
+				.collect(Collectors.toList());
+		deathpointList.removeAll(deathpoints);
+		deathpointList.addAll(deathpoints);
+		save.set("deathpoints", deathpointList);
 	}
 	
 	public void remove(Deathpoint deathpoint) {
-		save.set(deathpoint.getUniqueId().toString(), null);
+		List<?> deathpointList = save.getList("deathpoints", Arrays.asList());
+		deathpointList.remove(deathpoint);
+		save.set("deathpoints", deathpointList);
 	}
 	
-	public void save() throws IOException {
-		save.save(file);
+	public void save() {
+		//TODO: Handle gracefully
+		try {
+			save.save(file);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	public Collection<Deathpoint> getAll() {
-		return save.getValues(false).values().stream()
+	public Stream<Deathpoint> stream() {
+		return save.getList("deathpoints", Arrays.asList()).stream()
 				.filter(obj -> (obj instanceof Deathpoint))
-				.map(point -> (Deathpoint) point)
-				.collect(Collectors.toList());
+				.map(point -> (Deathpoint) point);
 	}
 	
-	private static String getKeyFromDeathpoint(Deathpoint point) {
-		return point.getCreationInstant() + "-" + point.getUniqueId().toString();
-	}
+	private final File file;
+	private FileConfiguration save;
 	
 }

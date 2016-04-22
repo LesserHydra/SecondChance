@@ -5,12 +5,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -26,7 +25,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
-	private final UUID uniqueId;
 	private final UUID ownerUniqueId;
 	private final Location location;
 	private final Instant creationInstant;
@@ -39,20 +37,16 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 
 	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience) {
-		this.uniqueId = UUID.randomUUID();
 		this.creationInstant = Instant.now();
 		this.ownerUniqueId = owner.getUniqueId();
 
 		this.location = location.clone();
-		//this.location.setPitch(0);
-		//this.location.setYaw(0);
 		
 		this.inventory = createInventory(items);
 		this.experience = experience;
 	}
 	
 	public Deathpoint(Map<String, Object> map) {
-		this.uniqueId = UUID.fromString((String) map.get("uniqueId"));
 		this.creationInstant = Instant.parse((String) map.get("instant"));
 		this.ownerUniqueId = UUID.fromString((String) map.get("ownerUniqueId"));
 		this.location = (Location) map.get("location");
@@ -66,7 +60,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	@Override
 	public Map<String, Object> serialize() {
 		Map<String, Object> result = new HashMap<>();
-		result.put("uniqueId", uniqueId.toString());
 		result.put("instant", creationInstant.toString());
 		result.put("ownerUniqueId", ownerUniqueId.toString());
 		result.put("location", location);
@@ -102,9 +95,9 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 	public void destroy() {
 		if (invalid) return;
+		location.getChunk().load();
 		Arrays.stream(inventory.getContents())
-			.filter(Objects::nonNull)
-			.filter((item) -> item.getType() != Material.AIR)
+			.filter(ItemStackUtils::isValid)
 			.forEach((item) -> location.getWorld().dropItemNaturally(location, item));
 		inventory.clear();
 		despawnHitbox();
@@ -145,16 +138,16 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		return !invalid;
 	}
 	
-	public final UUID getUniqueId() {
-		return uniqueId;
-	}
-	
 	public final Instant getCreationInstant() {
 		return creationInstant;
 	}
 	
 	public final Location getLocation() {
 		return location.clone();
+	}
+	
+	public final World getWorld() {
+		return location.getWorld();
 	}
 	
 	public final UUID getOwnerUniqueId() {
@@ -168,18 +161,18 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 	@Override
 	public int hashCode() {
-		return (101 * uniqueId.hashCode())
-				^ (109 * ownerUniqueId.hashCode())
-				^ (107 * location.hashCode())
-				^ (103 * creationInstant.hashCode());
+		return (101 * ownerUniqueId.hashCode())
+				^ (103 * location.hashCode())
+				^ (107 * creationInstant.hashCode());
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Deathpoint)) return false;
+		if (obj == this) return true;
+		
 		Deathpoint other = (Deathpoint) obj;
-		return uniqueId.equals(other.getUniqueId())
-				&& ownerUniqueId.equals(other.getOwnerUniqueId())
+		return ownerUniqueId.equals(other.getOwnerUniqueId())
 				&& location.equals(other.getLocation())
 				&& creationInstant.equals(other.getCreationInstant());
 	}
