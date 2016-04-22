@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -89,11 +90,7 @@ class DeathpointHandler implements Listener {
 		if (player == null) return;
 		
 		//Destroy old deathpoint(s)
-		//TODO: Config option
-		deathpoints.values().stream()
-				.flatMap(Collection::stream)
-				.filter(point -> point.getOwnerUniqueId().equals(player.getUniqueId()))
-				.forEach(this::scheduleForget);
+		destroyOldDeathpoints(player);
 		
 		//Get location
 		Location location = findLocation(player);
@@ -208,16 +205,21 @@ class DeathpointHandler implements Listener {
 				options.particleSecondarySpeed);
 	}
 	
-	private void scheduleForget(Deathpoint deathpoint) {
-		Bukkit.getScheduler().runTaskLater(plugin, () -> this.forget(deathpoint), 0);
-	}
-	
-	//Called when deathpoint is lost
-	private void forget(Deathpoint deathpoint) {
-		if (options.dropItemsOnForget) deathpoint.dropItems();
-		if (options.dropExpOnForget) deathpoint.dropExperience();
-		deathpoint.destroy();
-		remove(deathpoint);
+	private void destroyOldDeathpoints(Player player) {
+		if (options.maxPerPlayer <= 0) return;
+		
+		Deque<Deathpoint> playerDeathpoints = deathpoints.values().stream()
+				.flatMap(Collection::stream)
+				.filter(point -> point.getOwnerUniqueId().equals(player.getUniqueId()))
+				.collect(Collectors.toCollection(LinkedList::new));
+		
+		while (playerDeathpoints.size() >= options.maxPerPlayer) {
+			Deathpoint deathpoint = playerDeathpoints.remove();
+			if (options.dropItemsOnForget) deathpoint.dropItems();
+			if (options.dropExpOnForget) deathpoint.dropExperience();
+			deathpoint.destroy();
+			remove(deathpoint);
+		}
 	}
 	
 	private void remove(Deathpoint deathpoint) {

@@ -13,11 +13,8 @@ class ConfigOptions {
 	//Exp is dropped when point not retrieved; otherwise exp is lost
 	public final boolean dropExpOnForget = false;
 	
-	//TODO: Implement max stuff
 	//Maximum number of deathpoints per player, before the oldest are lost (-1 disables)
 	public final int maxPerPlayer = 1;
-	//Maximum number of deathpoints serverwide, before the oldest are lost (-1 disables)
-	public final int maxTotal = -1; //TODO: Why would you want this to be a thing?
 	
 	//Delay for particle timer
 	public final long particleDelay = 20;
