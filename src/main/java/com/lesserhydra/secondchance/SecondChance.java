@@ -14,7 +14,7 @@ public class SecondChance extends JavaPlugin {
 	private static Plugin plugin;
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
-	private final ConfigOptions options = new ConfigOptions();
+	private final ConfigOptions options = new ConfigOptions(getConfig());
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this, options);
 	private final Map<String, SaveHandler> saveHandlers = new HashMap<>();
 	
@@ -26,6 +26,7 @@ public class SecondChance extends JavaPlugin {
 		//Create config & save folder if nonexistant
 		if (!getDataFolder().exists()) getDataFolder().mkdir(); //TODO: Check for failure
 		if (!saveFolder.exists()) saveFolder.mkdir(); //TODO: Check for failure
+		saveDefaultConfig();
 		
 		//Register Deathpoint serializability
 		ConfigurationSerialization.registerClass(Deathpoint.class, "Deathpoint");

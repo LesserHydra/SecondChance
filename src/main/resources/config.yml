@@ -1,0 +1,29 @@
+#Items are held on death
+holdItems: true
+#Exp is held on death
+holdExp: true
+#Items are dropped when point not retrieved; otherwise items are lost
+dropItemsOnForget: true
+#Exp is dropped when point not retrieved; otherwise exp is lost
+dropExpOnForget: false
+
+#Maximum number of deathpoints per player, before the oldest are lost (-1 disables)
+maxPerPlayer: 1
+
+#Delay for particle timer
+particleDelay: 20
+
+#Primary particles (Show location to click, by default)
+particlePrimary: PORTAL
+particlePrimaryCount: 50
+particlePrimarySpread: 0.2
+particlePrimarySpeed: 0.5
+
+#Secondary particles (Show proximity, by default)
+particleSecondary: END_ROD
+particleSecondaryCount: 15
+particleSecondarySpread: 10
+particleSecondarySpeed: 0.1
+
+#Only a deathpoint's owner can access it
+isProtected: true
