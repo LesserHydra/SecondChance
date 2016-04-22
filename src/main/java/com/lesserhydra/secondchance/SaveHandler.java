@@ -12,7 +12,13 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 class SaveHandler {
-
+	
+	private static final String SAVE_SECTION = "deathpoints";
+	
+	private final File file;
+	private FileConfiguration save;
+	
+	
 	public SaveHandler(File saveDirectory, World world) {
 		file = new File(saveDirectory + File.separator + world.getName() + ".yml");
 	}
@@ -33,7 +39,7 @@ class SaveHandler {
 				.filter(point -> !deathpoint.equals(point))
 				.collect(Collectors.toList());
 		deathpointList.add(deathpoint);
-		save.set("deathpoints", deathpointList);
+		save.set(SAVE_SECTION, deathpointList);
 	}
 	
 	public void putAll(Collection<Deathpoint> deathpoints) {
@@ -41,13 +47,13 @@ class SaveHandler {
 				.collect(Collectors.toList());
 		deathpointList.removeAll(deathpoints);
 		deathpointList.addAll(deathpoints);
-		save.set("deathpoints", deathpointList);
+		save.set(SAVE_SECTION, deathpointList);
 	}
 	
 	public void remove(Deathpoint deathpoint) {
-		List<?> deathpointList = save.getList("deathpoints", Arrays.asList());
+		List<?> deathpointList = save.getList(SAVE_SECTION, Arrays.asList());
 		deathpointList.remove(deathpoint);
-		save.set("deathpoints", deathpointList);
+		save.set(SAVE_SECTION, deathpointList);
 	}
 	
 	public void save() {
@@ -61,12 +67,9 @@ class SaveHandler {
 	}
 	
 	public Stream<Deathpoint> stream() {
-		return save.getList("deathpoints", Arrays.asList()).stream()
+		return save.getList(SAVE_SECTION, Arrays.asList()).stream()
 				.filter(obj -> (obj instanceof Deathpoint))
 				.map(point -> (Deathpoint) point);
 	}
-	
-	private final File file;
-	private FileConfiguration save;
 	
 }

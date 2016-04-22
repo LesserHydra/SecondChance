@@ -21,7 +21,23 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import com.lesserhydra.bukkitutil.ItemStackUtils;
 
+/**
+ * A floating "container" that holds items and experience when a player dies.
+ */
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
+	
+	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
+	
+	private final UUID ownerUniqueId;
+	private final Location location;
+	private final Instant creationInstant;
+	
+	private Inventory inventory;
+	private int experience;
+	
+	private ArmorStand hitbox;
+	private boolean invalid = false;
+	
 	
 	/**
 	 * Constructs a deathpoint.
@@ -97,7 +113,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	}
 	
 	/**
-	 * Destroy this deathpoint, dropping its contents to the ground and despawning the hitbox.
+	 * Destroys this deathpoint, dropping its contents to the ground and despawning the hitbox.
 	 */
 	public void destroy() {
 		if (invalid) return;
@@ -153,7 +169,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 	/**
 	 * Checks if this deathpoint has not been destroyed.
-	 * @return True if not destroyed
+	 * @return True if valid
 	 */
 	public boolean isValid() {
 		return !invalid;
@@ -168,8 +184,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	}
 	
 	/**
-	 * Returns the location this deathpoint exists at.
-	 * @return The location this deathpoint exists at
+	 * Returns a copy of the location this deathpoint exists at.
+	 * @return A copy of the location this deathpoint exists at
 	 */
 	public final Location getLocation() {
 		return location.clone();
@@ -213,18 +229,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 				&& location.equals(other.getLocation())
 				&& creationInstant.equals(other.getCreationInstant());
 	}
-	
-	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
-	
-	private final UUID ownerUniqueId;
-	private final Location location;
-	private final Instant creationInstant;
-	
-	private Inventory inventory;
-	private int experience;
-	
-	private ArmorStand hitbox;
-	private boolean invalid = false;
 	
 	private Inventory createInventory(ItemStack[] items) {
 		Inventory result = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
