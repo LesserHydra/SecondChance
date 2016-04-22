@@ -5,12 +5,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -103,8 +102,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	public void destroy() {
 		if (invalid) return;
 		Arrays.stream(inventory.getContents())
-			.filter(Objects::nonNull)
-			.filter((item) -> item.getType() != Material.AIR)
+			.filter(ItemStackUtils::isValid)
 			.forEach((item) -> location.getWorld().dropItemNaturally(location, item));
 		inventory.clear();
 		despawnHitbox();
@@ -155,6 +153,10 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 	public final Location getLocation() {
 		return location.clone();
+	}
+	
+	public final World getWorld() {
+		return location.getWorld();
 	}
 	
 	public final UUID getOwnerUniqueId() {

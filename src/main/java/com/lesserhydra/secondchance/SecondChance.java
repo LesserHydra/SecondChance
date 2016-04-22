@@ -1,8 +1,10 @@
 package com.lesserhydra.secondchance;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
+import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -11,51 +13,47 @@ public class SecondChance extends JavaPlugin {
 	
 	private static Plugin plugin;
 	
+	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
-	public final SaveHandler saveHandler = new SaveHandler();
+	private final Map<String, SaveHandler> saveHandlers = new HashMap<>();
 	
 	
 	@Override
 	public void onEnable() {
 		plugin = this;
 		
-		//Create data folders if nonexistant
-		if (!getDataFolder().exists()) {
-			getLogger().info("Creating data folders");
-			getDataFolder().mkdir();
-		}
+		//Create config & save folder if nonexistant
+		if (!getDataFolder().exists()) getDataFolder().mkdir(); //TODO: Check for failure
+		if (!saveFolder.exists()) saveFolder.mkdir(); //TODO: Check for failure
 		
+		//Register Deathpoint serializability
 		ConfigurationSerialization.registerClass(Deathpoint.class, "Deathpoint");
-		
-		try {saveHandler.load(getDataFolder() + File.separator + "save.yml");}
-		catch (IOException e) {
-			getLogger().severe("Failed to load save file! Disabling.");
-			e.printStackTrace();
-			setEnabled(false);
-			return;
-		}
-		
-		deathpointHandler.init();
-		
+		//Initiate all worlds
+		getServer().getWorlds().forEach(deathpointHandler::initWorld);
 		//Register listener events
 		getServer().getPluginManager().registerEvents(deathpointHandler, this);
 	}
 	
 	@Override
 	public void onDisable() {
+		//Deinitiate handler
 		deathpointHandler.deinit();
-		
-		try {
-			saveHandler.save();
-		} catch (IOException e) {
-			getLogger().severe("Could not save deathpoints! Dropping on the ground as a last-ditch.");
-			deathpointHandler.panic();
-			e.printStackTrace();
-		}
-		
+		//Save all files
+		saveHandlers.values().forEach(SaveHandler::save);
+		//Unregister Deathpoint serializability
 		ConfigurationSerialization.unregisterClass(Deathpoint.class);
 		
 		plugin = null;
+	}
+	
+	public SaveHandler getSaveHandler(World world) {
+		SaveHandler result = saveHandlers.get(world.getName());
+		if (result != null) return result;
+		
+		result = new SaveHandler(saveFolder, world);
+		result.load();
+		saveHandlers.put(world.getName(), result);
+		return result;
 	}
 	
 	public static Logger logger() {
