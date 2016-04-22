@@ -1,29 +1,67 @@
-#Items are held on death
-holdItems: true
-#Exp is held on death
-holdExp: true
-#Items are dropped when point not retrieved; otherwise items are lost
-dropItemsOnForget: true
-#Exp is dropped when point not retrieved; otherwise exp is lost
-dropExpOnForget: false
+##############################
+# SecondChance Configuration #
+##############################
 
-#Maximum number of deathpoints per player, before the oldest are lost (-1 disables)
-maxPerPlayer: 1
+#Allows conversion to newer versions. Do not change!
+Config version: 1
+
+#Whether deathpoints should hold items on death
+#Default: true
+Hold Items: true
+
+#Whether deathpoints should hold experience on death
+#Default: true
+Hold Experience: true
+
+#Whether items should be dropped when deathpoint is not retrieved; otherwise
+#items will be lost
+#Default: true
+Drop Items When Forgotten: true
+
+#Whether experience should be dropped when deathpoint is not retrieved;
+#otherwise experience will be lost
+#Default: false
+Drop Experience When Forgotten: false
+
+#Maximum number of deathpoints allowed per player, before the oldest is
+#forgotten (-1 disables)
+#Default: 1
+Player Deathpoint Maximum: 1
+
+#Whether or not access is limited to a deathpoint's owner
+#Default: true
+Owner Based: true
 
 #Delay for particle timer
-particleDelay: 20
+#Default: 20
+Particle Timer Delay: 20
 
 #Primary particles (Show location to click, by default)
-particlePrimary: PORTAL
-particlePrimaryCount: 50
-particlePrimarySpread: 0.2
-particlePrimarySpeed: 0.5
+Primary Particles:
+  #Particle type enum; Must be a valid particle type!
+  #Default: PORTAL
+  Type: PORTAL
+  #Number of particles
+  #Default: 50
+  Count: 50
+  #"Radius" of particle spread
+  #Default: 0.2
+  Spread: 0.2
+  #Particle speed
+  #Default: 0.5
+  Speed: 0.5
 
 #Secondary particles (Show proximity, by default)
-particleSecondary: END_ROD
-particleSecondaryCount: 15
-particleSecondarySpread: 10
-particleSecondarySpeed: 0.1
-
-#Only a deathpoint's owner can access it
-isProtected: true
+Secondary Particles:
+  #Particle type enum; Must be a valid particle type!
+  #Default: END_ROD
+  Type: END_ROD
+  #Number of particles
+  #Default: 15
+  Count: 15
+  #"Radius" of particle spread
+  #Default: 10
+  Spread: 10
+  #Particle speed
+  #Default: 0.1
+  Speed: 0.1
