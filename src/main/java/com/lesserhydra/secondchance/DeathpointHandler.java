@@ -200,7 +200,7 @@ class DeathpointHandler implements Listener {
 		location.getWorld().spawnParticle(options.particlePrimary, location, options.particlePrimaryCount,
 				options.particlePrimarySpread, options.particlePrimarySpread, options.particlePrimarySpread,
 				options.particlePrimarySpeed);
-		location.getWorld().spawnParticle(options.particlePrimary, location, options.particleSecondaryCount,
+		location.getWorld().spawnParticle(options.particleSecondary, location, options.particleSecondaryCount,
 				options.particleSecondarySpread, options.particleSecondarySpread, options.particleSecondarySpread,
 				options.particleSecondarySpeed);
 	}
