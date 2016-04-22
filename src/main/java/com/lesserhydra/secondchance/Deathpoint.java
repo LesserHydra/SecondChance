@@ -23,29 +23,26 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
 
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
-	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
-	
-	private final UUID ownerUniqueId;
-	private final Location location;
-	private final Instant creationInstant;
-	
-	private Inventory inventory;
-	private int experience;
-	
-	private ArmorStand hitbox;
-	private boolean invalid = false;
-	
-
+	/**
+	 * Constructs a deathpoint.
+	 * @param owner Player that owns this deathpoint
+	 * @param location Deathpoint exists at
+	 * @param items Contents of deathpoint (must fit in inventory)
+	 * @param experience Experience contained in deathpoint
+	 */
 	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience) {
 		this.creationInstant = Instant.now();
 		this.ownerUniqueId = owner.getUniqueId();
-
 		this.location = location.clone();
 		
 		this.inventory = createInventory(items);
 		this.experience = experience;
 	}
 	
+	/**
+	 * Constructs a deathpoint by deserializing.
+	 * @param map Map Formed from {@link #serialize} method
+	 */
 	public Deathpoint(Map<String, Object> map) {
 		this.creationInstant = Instant.parse((String) map.get("instant"));
 		this.ownerUniqueId = UUID.fromString((String) map.get("ownerUniqueId"));
@@ -74,7 +71,10 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 
 		return result;
 	}
-
+	
+	/**
+	 * Spawns in the hitbox, if it doesn't already exist.
+	 */
 	public void spawnHitbox() {
 		if (hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
@@ -87,12 +87,18 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.getPlugin(SecondChance.class), this));
 	}
 	
+	/**
+	 * Despawns the hitbox, if it exists.
+	 */
 	public void despawnHitbox() {
 		if (hitbox == null) return;
 		hitbox.remove();
 		hitbox = null;
 	}
 	
+	/**
+	 * Destroy this deathpoint, dropping its contents to the ground and despawning the hitbox.
+	 */
 	public void destroy() {
 		if (invalid) return;
 		location.getChunk().load();
@@ -104,7 +110,11 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		invalid = true;
 	}
 	
+	/**
+	 * Drops experience to the ground.
+	 */
 	public void dropExperience() {
+		if (experience == 0) return;
 		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
 		orb.setExperience(experience);
 		experience = 0;
@@ -123,33 +133,60 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		}}.runTaskLater(plugin, 2L);*/
 	}
 	
+	/**
+	 * Runs particle effect.
+	 */
 	public void runParticles() {
 		if (location == null) return;
 		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
 		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
 	}
 	
+	/**
+	 * Checks if no items are contained.
+	 * @return True if no items are contained
+	 */
 	public boolean isEmpty() {
 		return !Arrays.stream(inventory.getContents())
 				.anyMatch(ItemStackUtils::isValid);
 	}
 	
+	/**
+	 * Checks if this deathpoint has not been destroyed.
+	 * @return True if not destroyed
+	 */
 	public boolean isValid() {
 		return !invalid;
 	}
 	
+	/**
+	 * Returns the instant of creation.
+	 * @return The instant of creation
+	 */
 	public final Instant getCreationInstant() {
 		return creationInstant;
 	}
 	
+	/**
+	 * Returns the location this deathpoint exists at.
+	 * @return The location this deathpoint exists at
+	 */
 	public final Location getLocation() {
 		return location.clone();
 	}
 	
+	/**
+	 * Returns the world inhabited by this deathpoint.
+	 * @return The world inhabited by this deathpoint
+	 */
 	public final World getWorld() {
 		return location.getWorld();
 	}
 	
+	/**
+	 * Returns the UUID of the player that owns this deathpoint.
+	 * @return The UUID of the player that owns this deathpoint.
+	 */
 	public final UUID getOwnerUniqueId() {
 		return ownerUniqueId;
 	}
@@ -176,6 +213,18 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 				&& location.equals(other.getLocation())
 				&& creationInstant.equals(other.getCreationInstant());
 	}
+	
+	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
+	
+	private final UUID ownerUniqueId;
+	private final Location location;
+	private final Instant creationInstant;
+	
+	private Inventory inventory;
+	private int experience;
+	
+	private ArmorStand hitbox;
+	private boolean invalid = false;
 	
 	private Inventory createInventory(ItemStack[] items) {
 		Inventory result = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
