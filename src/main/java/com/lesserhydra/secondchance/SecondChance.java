@@ -14,7 +14,8 @@ public class SecondChance extends JavaPlugin {
 	private static Plugin plugin;
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
-	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
+	private final ConfigOptions options = new ConfigOptions();
+	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this, options);
 	private final Map<String, SaveHandler> saveHandlers = new HashMap<>();
 	
 	
