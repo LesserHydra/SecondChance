@@ -53,7 +53,7 @@ class DeathpointHandler implements Listener {
 	
 	public void initWorld(World world) {
 		Deque<Deathpoint> worldDeathpoints = new LinkedList<>();
-		plugin.getSaveHandler(world).getAll().stream()
+		plugin.getSaveHandler(world).stream()
 				.sorted((p1, p2) -> p1.getCreationInstant().compareTo(p2.getCreationInstant()))
 				.forEachOrdered(worldDeathpoints::add);
 		worldDeathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
@@ -70,8 +70,7 @@ class DeathpointHandler implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onWorldSave(WorldSaveEvent event) {
 		SaveHandler saveHandler = plugin.getSaveHandler(event.getWorld());
-		deathpoints.get(event.getWorld().getName()).stream()
-				.forEach(saveHandler::put);
+		saveHandler.putAll(deathpoints.get(event.getWorld().getName()));
 		saveHandler.save();
 	}
 	
@@ -212,18 +211,6 @@ class DeathpointHandler implements Listener {
 				.findFirst().get().value();
 		return loc.getBlock().getLocation().add(0.5, 0, 0.5);
 	}
-	
-	/*@EventHandler(priority = EventPriority.MONITOR)
-	public void onPlayerRespawn(final PlayerRespawnEvent e) {
-		new BukkitRunnable() { @Override public void run() {
-			playerSpawnEffect(e.getPlayer());
-		}}.runTaskLater(plugin, 0L);
-	}*/
-	
-	//TODO: New plugin
-	/*private void playerSpawnEffect(Player player) {
-		player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 300, 9, true, false), true);
-	}*/
 	
 }
 
