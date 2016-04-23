@@ -42,7 +42,7 @@ class ConfigOptions {
 		this.holdExp = config.getBoolean("Hold Experience", true);
 		this.dropItemsOnForget = config.getBoolean("Drop Items When Forgotten", true);
 		this.dropExpOnForget = config.getBoolean("Drop Experience When Forgotten", false);
-		this.breakOnHit = config.getBoolean("Break Deathpoint On Leftclick", true);
+		this.breakOnHit = config.getBoolean("Break Deathpoint On Leftclick", false);
 		this.maxPerPlayer = config.getInt("Player Deathpoint Maximum", 1);
 		this.isProtected = config.getBoolean("Owner Based", true);
 		this.particleDelay = config.getLong("Particle Timer Delay", 20);

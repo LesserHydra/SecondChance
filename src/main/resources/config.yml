@@ -24,6 +24,11 @@ Drop Items When Forgotten: true
 #Default: false
 Drop Experience When Forgotten: false
 
+#Whether or not a deathpoint should break when punched, acting as if it was
+#opened and then closed
+#Default: false
+Break Deathpoint On Leftclick: false
+
 #Maximum number of deathpoints allowed per player, before the oldest is
 #forgotten (-1 disables)
 #Default: 1
