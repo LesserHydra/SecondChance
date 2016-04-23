@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
@@ -92,7 +91,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	 * Spawns in the hitbox, if it doesn't already exist.
 	 */
 	public void spawnHitbox() {
-		if (hitbox != null) return;
+		if (invalid || hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
 		
 		Location standLoc = location.clone().add(0, -0.75, 0);
@@ -113,17 +112,24 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	}
 	
 	/**
-	 * Destroys this deathpoint, dropping its contents to the ground and despawning the hitbox.
+	 * Destroys this deathpoint, despawning the hitbox, clearing contents and invalidating.
 	 */
 	public void destroy() {
-		if (invalid) return;
+		despawnHitbox();
+		inventory.clear();
+		experience = 0;
+		invalid = true;
+	}
+	
+	/**
+	 * Drops items to the ground.
+	 */
+	public void dropItems() {
 		location.getChunk().load();
 		Arrays.stream(inventory.getContents())
 			.filter(ItemStackUtils::isValid)
 			.forEach((item) -> location.getWorld().dropItemNaturally(location, item));
 		inventory.clear();
-		despawnHitbox();
-		invalid = true;
 	}
 	
 	/**
@@ -134,28 +140,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
 		orb.setExperience(experience);
 		experience = 0;
-		/*int toDrop = ExpUtil.calculateXpForNextLevel(player.getLevel());
-		xpPoints -= toDrop;
-		
-		//Drop xp
-		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
-		if (xpPoints < 0) toDrop += xpPoints;
-		orb.setExperience(toDrop);
-		
-		final int remaining = xpPoints;
-		if (remaining <= 0) return;
-		new BukkitRunnable() { @Override public void run() {
-			dropExperience(remaining);
-		}}.runTaskLater(plugin, 2L);*/
-	}
-	
-	/**
-	 * Runs particle effect.
-	 */
-	public void runParticles() {
-		if (location == null) return;
-		location.getWorld().spawnParticle(Particle.PORTAL, location, 50, 0.2, 0.2, 0.2, 0.5);
-		location.getWorld().spawnParticle(Particle.END_ROD, location, 15, 10, 10, 10, 0.1);
 	}
 	
 	/**
@@ -171,8 +155,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	 * Checks if this deathpoint has not been destroyed.
 	 * @return True if valid
 	 */
-	public boolean isValid() {
-		return !invalid;
+	public boolean isInvalid() {
+		return invalid;
 	}
 	
 	/**

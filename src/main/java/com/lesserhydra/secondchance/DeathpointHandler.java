@@ -7,15 +7,18 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -37,10 +40,12 @@ class DeathpointHandler implements Listener {
 	
 	private final Map<String, Deque<Deathpoint>> deathpoints = new HashMap<>();
 	private final SecondChance plugin;
+	private final ConfigOptions options;
 	
 	
-	public DeathpointHandler(SecondChance plugin) {
+	public DeathpointHandler(SecondChance plugin, ConfigOptions options) {
 		this.plugin = plugin;
+		this.options = options;
 	}
 	
 	public void deinit() {
@@ -61,7 +66,7 @@ class DeathpointHandler implements Listener {
 		worldDeathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
 		deathpoints.put(world.getName(), worldDeathpoints);
 		
-		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(Deathpoint::runParticles), 0, 20);
+		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -88,18 +93,14 @@ class DeathpointHandler implements Listener {
 		if (player == null) return;
 		
 		//Destroy old deathpoint(s)
-		//TODO: Config option
-		deathpoints.values().stream()
-				.flatMap(Collection::stream)
-				.filter(point -> point.getOwnerUniqueId().equals(player.getUniqueId()))
-				.forEach(this::scheduleRemove);
+		destroyOldDeathpoints(player);
 		
 		//Get location
 		Location location = findLocation(player);
 		
 		//Get items, if applicable
 		ItemStack[] itemsToHold = null;
-		if (!event.getKeepInventory()) {
+		if (options.holdItems && !event.getKeepInventory()) {
 			itemsToHold = player.getInventory().getContents();
 			event.getDrops().removeAll(Arrays.asList(itemsToHold));
 			if (!Arrays.stream(itemsToHold).anyMatch(ItemStackUtils::isValid)) itemsToHold = null;
@@ -107,7 +108,7 @@ class DeathpointHandler implements Listener {
 		
 		//Get exp, if applicable
 		int exp = 0;
-		if (!event.getKeepLevel()) { //FIXME: Still goes when gamerule keepInventory is true?
+		if (options.holdExp && !event.getKeepLevel()) { //FIXME: Still goes when gamerule keepInventory is true?
 			exp = ExpUtil.calculateXpFromLevel(player.getLevel())
 					+ ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
 			event.setDroppedExp(0);
@@ -154,13 +155,35 @@ class DeathpointHandler implements Listener {
 	
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onArmorStandDamage(EntityDamageEvent event) {
-		if (!(event.getEntity() instanceof ArmorStand)) return;
+		if (event.getEntityType() != EntityType.ARMOR_STAND) return;
 		
-		Optional<MetadataValue> found = event.getEntity().getMetadata("deathpoint")
-				.stream().filter(meta -> meta.getOwningPlugin() == plugin).findAny();
+		Optional<MetadataValue> found = event.getEntity().getMetadata("deathpoint").stream()
+				.filter(meta -> meta.getOwningPlugin() == plugin)
+				.findAny();
 		if (!found.isPresent()) return;
 		
 		event.setCancelled(true);
+	}
+	
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onArmorStandPunched(EntityDamageByEntityEvent event) {
+		if (!options.breakOnHit) return;
+		if (event.getEntityType() != EntityType.ARMOR_STAND) return;
+		if (event.getDamager().getType() != EntityType.PLAYER) return;
+		
+		Optional<Deathpoint> found = event.getEntity().getMetadata("deathpoint").stream()
+				.filter(meta -> meta.getOwningPlugin() == plugin)
+				.map(meta -> (Deathpoint) meta.value())
+				.findAny();
+		if (!found.isPresent()) return;
+		Deathpoint deathpoint = found.get();
+		Player punched = (Player) event.getDamager();
+		
+		if (options.isProtected && !punched.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		deathpoint.dropItems();
+		deathpoint.dropExperience();
+		deathpoint.destroy();
+		remove(deathpoint);	
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -174,14 +197,14 @@ class DeathpointHandler implements Listener {
 		
 		Player player = event.getPlayer();
 		Deathpoint deathpoint = (Deathpoint) found.get().value();
-		if (player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) {
-			deathpoint.dropExperience();
-			if (deathpoint.isEmpty()) {
-				deathpoint.destroy();
-				remove(deathpoint);
-			}
-			else player.openInventory(deathpoint.getInventory());
+		if (options.isProtected && !player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		
+		deathpoint.dropExperience();
+		if (deathpoint.isEmpty()) {
+			deathpoint.destroy();
+			remove(deathpoint);
 		}
+		else player.openInventory(deathpoint.getInventory());
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -190,18 +213,41 @@ class DeathpointHandler implements Listener {
 		if (!(holder instanceof Deathpoint)) return;
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
-		if (deathpoint.isValid()) {
+		if (!deathpoint.isInvalid()) {
+			deathpoint.dropItems();
 			deathpoint.destroy();
 			remove(deathpoint);
 		}
 	}
 	
-	private void scheduleRemove(Deathpoint deathpoint) {
-		Bukkit.getScheduler().runTaskLater(plugin, () -> this.remove(deathpoint), 0);
+	private void runParticles(Deathpoint deathpoint) {
+		Location location = deathpoint.getLocation();
+		location.getWorld().spawnParticle(options.particlePrimary, location, options.particlePrimaryCount,
+				options.particlePrimarySpread, options.particlePrimarySpread, options.particlePrimarySpread,
+				options.particlePrimarySpeed);
+		location.getWorld().spawnParticle(options.particleSecondary, location, options.particleSecondaryCount,
+				options.particleSecondarySpread, options.particleSecondarySpread, options.particleSecondarySpread,
+				options.particleSecondarySpeed);
+	}
+	
+	private void destroyOldDeathpoints(Player player) {
+		if (options.maxPerPlayer <= 0) return;
+		
+		Deque<Deathpoint> playerDeathpoints = deathpoints.values().stream()
+				.flatMap(Collection::stream)
+				.filter(point -> point.getOwnerUniqueId().equals(player.getUniqueId()))
+				.collect(Collectors.toCollection(LinkedList::new));
+		
+		while (playerDeathpoints.size() >= options.maxPerPlayer) {
+			Deathpoint deathpoint = playerDeathpoints.remove();
+			if (options.dropItemsOnForget) deathpoint.dropItems();
+			if (options.dropExpOnForget) deathpoint.dropExperience();
+			deathpoint.destroy();
+			remove(deathpoint);
+		}
 	}
 	
 	private void remove(Deathpoint deathpoint) {
-		deathpoint.destroy();
 		deathpoints.get(deathpoint.getWorld().getName()).remove(deathpoint);
 		plugin.getSaveHandler(deathpoint.getWorld()).remove(deathpoint);
 	}
