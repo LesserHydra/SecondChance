@@ -1,19 +1,32 @@
 #SecondChance
 
 ##Info
----
-SecondChance is a simple death-point plugin for Minecraft Spigot/Bukkit, inspired in part by the DarkSouls soul retrieval mechanic. It's currently in beta status, but nonetheless _should_ be safe for use.
+SecondChance is a simple death-point plugin for Minecraft Spigot/Bukkit, inspired in part by the DarkSouls soul retrieval mechanic. It's in beta status, but nonetheless _should_ be safe for use.
 
 Pull requests are certainly welcome and appreciated.
 
+Please note that this project relies upon Java 8.
+
 ##Basic Mechanics
----
 When a player dies, a floating death-point will appear at the last "safe" location that player moved through. It will persist until the player either accesses it or dies a second time, thus giving the player a _"second chance"_ at retrieving their items.
 
 A death-point contains all items dropped by the player on death, as well as the player's experience points. Accessing it will allow removal of items, and will grant stored exp. On destruction, the death-point will drop all contents _except for exp_ into the world.
 
+##Configurable
+* Particle effects
+* What is stored on death (Items and/or exp)
+* What is lost on second death (Items and/or exp, or nothing)
+* How many death-points a player can have at once
+* Whether access is limited to the original owner
+
 ##Current Plans
----
-* Configurable particles
-* Configurable maximum number of death-points per player
+* Configurable sounds
+* Permissions
+* Minor administration commands
+* Change hitbox system to use ghosted barrier blocks? (Might require ProtocolLib?)
 * Better handling of IOExceptions
+* Check compatibility with base Bukkit
+
+##Known issues
+* The stored experience points are sometimes off ever so slightly when dealing with high levels
+* If a player is in spectator mode, the plugin is reloaded, and the player dies without switching modes, a deathpoint will not spawn. (Incredibly minor issue)
