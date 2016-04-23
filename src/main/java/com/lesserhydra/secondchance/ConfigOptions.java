@@ -48,6 +48,12 @@ class ConfigOptions {
 	public final float openSoundPitch;
 	public final float openSoundVolume;
 	
+	//Sound on close
+	public final boolean closeSoundEnabled;
+	public final String closeSound;
+	public final float closeSoundPitch;
+	public final float closeSoundVolume;
+	
 	//Sound on break
 	public final boolean breakSoundEnabled;
 	public final String breakSound;
@@ -89,6 +95,11 @@ class ConfigOptions {
 		this.openSound = config.getString("Play Sound on Deathpoint Opened.Sound", "ui.button.click");
 		this.openSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Opened.Volume", 1);
 		this.openSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Opened.Pitch", 1);
+		
+		this.closeSoundEnabled = config.getBoolean("Play Sound on Deathpoint Closed.Enabled", true);
+		this.closeSound = config.getString("Play Sound on Deathpoint Closed.Sound", "ui.button.click");
+		this.closeSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Closed.Volume", 1);
+		this.closeSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Closed.Pitch", 1);
 		
 		this.breakSoundEnabled = config.getBoolean("Play Sound on Deathpoint Broken.Enabled", true);
 		this.breakSound = config.getString("Play Sound on Deathpoint Broken.Sound", "ui.button.click");

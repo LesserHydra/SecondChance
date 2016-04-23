@@ -202,7 +202,7 @@ class DeathpointHandler implements Listener {
 		
 		deathpoint.dropExperience();
 		if (deathpoint.isEmpty()) {
-			if (options.breakSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.breakSound, options.breakSoundVolume, options.breakSoundPitch);
+			if (options.closeSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.closeSound, options.closeSoundVolume, options.closeSoundPitch);
 			deathpoint.destroy();
 			remove(deathpoint);
 		}
@@ -219,7 +219,7 @@ class DeathpointHandler implements Listener {
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
 		if (!deathpoint.isInvalid()) {
-			if (options.breakSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.breakSound, options.breakSoundVolume, options.breakSoundPitch);
+			if (options.closeSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.closeSound, options.closeSoundVolume, options.closeSoundPitch);
 			deathpoint.dropItems();
 			deathpoint.destroy();
 			remove(deathpoint);

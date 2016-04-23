@@ -66,26 +66,86 @@ Secondary Particles:
   #Default: 0.1
   Speed: 0.1
 
+
+##########
+# Sounds #
+##########
+
+#See the following for info on sound, volume, and pitch:
+#http://minecraft.gamepedia.com/Commands#playsound
+#Note that invalid sounds will fail silently (pun not intended)
+
+#Sound that plays when a deathpoint is created
 Play Sound on Deathpoint Created:
+  #Default: true
   Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: ???
   Sound: ui.button.click
-  Volume: 1
-  Pitch: 1
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 1.0
 
+#Sound that plays when a deathpoint's inventory is opened
 Play Sound on Deathpoint Opened:
+  #Default: true
   Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: ???
   Sound: ui.button.click
-  Volume: 1
-  Pitch: 1
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 1.0
 
+#Sound that plays when a deathpoint's inventory is closed
+Play Sound on Deathpoint Closed:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: ???
+  Sound: ui.button.click
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 1.0
+
+#Sound that plays when a deathpoint is broken (on leftclick)
 Play Sound on Deathpoint Broken:
+  #Default: true
   Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: ???
   Sound: ui.button.click
-  Volume: 1
-  Pitch: 1
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 1.0
 
+#Sound that plays when a deathpoint is forgotten
 Play Sound on Deathpoint Forgotten:
+  #Default: true
   Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: ???
   Sound: ui.button.click
-  Volume: 1
-  Pitch: 1
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 1.0
