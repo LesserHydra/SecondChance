@@ -1,9 +1,10 @@
-##############################
-# SecondChance Configuration #
-##############################
-
 #Allows conversion to newer versions. Do not change!
 Config version: 1
+
+
+#######################
+# Basic Configuration #
+#######################
 
 #Whether deathpoints should hold items on death
 #Default: true
@@ -31,6 +32,11 @@ Player Deathpoint Maximum: 1
 #Whether or not access is limited to a deathpoint's owner
 #Default: true
 Owner Based: true
+
+
+#############
+# Particles #
+#############
 
 #Delay for particle timer
 #Default: 20
