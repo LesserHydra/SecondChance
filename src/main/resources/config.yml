@@ -78,10 +78,10 @@ Secondary Particles:
 #Sound that plays when a deathpoint is created
 Play Sound on Deathpoint Created:
   #Default: true
-  Enabled: true
+  Enabled: false
   #Sound to play; works with resource packs
   #http://minecraft.gamepedia.com/Sounds.json#Sound_events
-  #Default: ???
+  #Default: None
   Sound: ui.button.click
   #Volume (See /playsound link above)
   #Default: 1.0
@@ -93,10 +93,10 @@ Play Sound on Deathpoint Created:
 #Sound that plays when a deathpoint's inventory is opened
 Play Sound on Deathpoint Opened:
   #Default: true
-  Enabled: true
+  Enabled: false
   #Sound to play; works with resource packs
   #http://minecraft.gamepedia.com/Sounds.json#Sound_events
-  #Default: ???
+  #Default: None
   Sound: ui.button.click
   #Volume (See /playsound link above)
   #Default: 1.0
@@ -111,14 +111,14 @@ Play Sound on Deathpoint Closed:
   Enabled: true
   #Sound to play; works with resource packs
   #http://minecraft.gamepedia.com/Sounds.json#Sound_events
-  #Default: ???
-  Sound: ui.button.click
+  #Default: entity.item.pickup
+  Sound: entity.item.pickup
   #Volume (See /playsound link above)
   #Default: 1.0
   Volume: 1.0
   #Pitch (See /playsound link above)
   #Default: 1.0
-  Pitch: 1.0
+  Pitch: 0.5
 
 #Sound that plays when a deathpoint is broken (on leftclick)
 Play Sound on Deathpoint Broken:
@@ -126,14 +126,14 @@ Play Sound on Deathpoint Broken:
   Enabled: true
   #Sound to play; works with resource packs
   #http://minecraft.gamepedia.com/Sounds.json#Sound_events
-  #Default: ???
-  Sound: ui.button.click
+  #Default: entity.item.pickup
+  Sound: entity.item.pickup
   #Volume (See /playsound link above)
   #Default: 1.0
   Volume: 1.0
   #Pitch (See /playsound link above)
   #Default: 1.0
-  Pitch: 1.0
+  Pitch: 0.5
 
 #Sound that plays when a deathpoint is forgotten
 Play Sound on Deathpoint Forgotten:
@@ -141,11 +141,11 @@ Play Sound on Deathpoint Forgotten:
   Enabled: true
   #Sound to play; works with resource packs
   #http://minecraft.gamepedia.com/Sounds.json#Sound_events
-  #Default: ???
-  Sound: ui.button.click
+  #Default: entity.shulker_bullet.hit
+  Sound: entity.shulker_bullet.hit
   #Volume (See /playsound link above)
   #Default: 1.0
   Volume: 1.0
   #Pitch (See /playsound link above)
   #Default: 1.0
-  Pitch: 1.0
+  Pitch: 0.5

@@ -181,6 +181,7 @@ class DeathpointHandler implements Listener {
 		Player punched = (Player) event.getDamager();
 		
 		if (options.isProtected && !punched.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		if (options.breakSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.breakSound, options.breakSoundVolume, options.breakSoundPitch);
 		deathpoint.dropItems();
 		deathpoint.dropExperience();
 		deathpoint.destroy();
