@@ -140,19 +140,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
 		orb.setExperience(experience);
 		experience = 0;
-		/*int toDrop = ExpUtil.calculateXpForNextLevel(player.getLevel());
-		xpPoints -= toDrop;
-		
-		//Drop xp
-		ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
-		if (xpPoints < 0) toDrop += xpPoints;
-		orb.setExperience(toDrop);
-		
-		final int remaining = xpPoints;
-		if (remaining <= 0) return;
-		new BukkitRunnable() { @Override public void run() {
-			dropExperience(remaining);
-		}}.runTaskLater(plugin, 2L);*/
 	}
 	
 	/**
