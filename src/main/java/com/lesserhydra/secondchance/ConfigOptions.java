@@ -36,6 +36,29 @@ class ConfigOptions {
 	public final double particleSecondarySpread;
 	public final double particleSecondarySpeed;
 	
+	//Sound on creation
+	public final boolean creationSoundEnabled;
+	public final String creationSound;
+	public final float creationSoundPitch;
+	public final float creationSoundVolume;
+	
+	//Sound on open
+	public final boolean openSoundEnabled;
+	public final String openSound;
+	public final float openSoundPitch;
+	public final float openSoundVolume;
+	
+	//Sound on break
+	public final boolean breakSoundEnabled;
+	public final String breakSound;
+	public final float breakSoundPitch;
+	public final float breakSoundVolume;
+	
+	//Sound on forget
+	public final boolean forgetSoundEnabled;
+	public final String forgetSound;
+	public final float forgetSoundPitch;
+	public final float forgetSoundVolume;
 	
 	public ConfigOptions(FileConfiguration config) {
 		this.holdItems = config.getBoolean("Hold Items", true);
@@ -56,6 +79,26 @@ class ConfigOptions {
 		this.particleSecondaryCount = config.getInt("Secondary Particles.Count", 15);
 		this.particleSecondarySpread = config.getDouble("Secondary Particles.Spread", 10);
 		this.particleSecondarySpeed = config.getDouble("Secondary Particles.Speed", 0.1);
+		
+		this.creationSoundEnabled = config.getBoolean("Play Sound on Deathpoint Created.Enabled", true);
+		this.creationSound = config.getString("Play Sound on Deathpoint Created.Sound", "ui.button.click");
+		this.creationSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Created.Volume", 1);
+		this.creationSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Created.Pitch", 1);
+		
+		this.openSoundEnabled = config.getBoolean("Play Sound on Deathpoint Opened.Enabled", true);
+		this.openSound = config.getString("Play Sound on Deathpoint Opened.Sound", "ui.button.click");
+		this.openSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Opened.Volume", 1);
+		this.openSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Opened.Pitch", 1);
+		
+		this.breakSoundEnabled = config.getBoolean("Play Sound on Deathpoint Broken.Enabled", true);
+		this.breakSound = config.getString("Play Sound on Deathpoint Broken.Sound", "ui.button.click");
+		this.breakSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Broken.Volume", 1);
+		this.breakSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Broken.Pitch", 1);
+		
+		this.forgetSoundEnabled = config.getBoolean("Play Sound on Deathpoint Forgotten.Enabled", true);
+		this.forgetSound = config.getString("Play Sound on Deathpoint Forgotten.Sound", "ui.button.click");
+		this.forgetSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Forgotten.Volume", 1);
+		this.forgetSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Forgotten.Pitch", 1);
 	}
 	
 	private static <T extends Enum<T>> T getEnum(String path, T def, FileConfiguration config) {

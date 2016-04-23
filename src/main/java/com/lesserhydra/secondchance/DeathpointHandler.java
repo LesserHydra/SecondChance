@@ -116,6 +116,7 @@ class DeathpointHandler implements Listener {
 		
 		//Create if not empty
 		if (itemsToHold == null && exp == 0) return;
+		if (options.creationSoundEnabled) location.getWorld().playSound(location, options.creationSound, options.creationSoundVolume, options.creationSoundPitch);
 		Deathpoint newPoint = new Deathpoint(player, location, itemsToHold, exp);
 		newPoint.spawnHitbox();
 		deathpoints.get(location.getWorld().getName()).add(newPoint);
@@ -201,10 +202,14 @@ class DeathpointHandler implements Listener {
 		
 		deathpoint.dropExperience();
 		if (deathpoint.isEmpty()) {
+			if (options.breakSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.breakSound, options.breakSoundVolume, options.breakSoundPitch);
 			deathpoint.destroy();
 			remove(deathpoint);
 		}
-		else player.openInventory(deathpoint.getInventory());
+		else {
+			if (options.openSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.openSound, options.openSoundVolume, options.openSoundPitch);
+			player.openInventory(deathpoint.getInventory());
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -214,6 +219,7 @@ class DeathpointHandler implements Listener {
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
 		if (!deathpoint.isInvalid()) {
+			if (options.breakSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.breakSound, options.breakSoundVolume, options.breakSoundPitch);
 			deathpoint.dropItems();
 			deathpoint.destroy();
 			remove(deathpoint);
@@ -240,6 +246,7 @@ class DeathpointHandler implements Listener {
 		
 		while (playerDeathpoints.size() >= options.maxPerPlayer) {
 			Deathpoint deathpoint = playerDeathpoints.remove();
+			if (options.forgetSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.forgetSound, options.forgetSoundVolume, options.forgetSoundPitch);
 			if (options.dropItemsOnForget) deathpoint.dropItems();
 			if (options.dropExpOnForget) deathpoint.dropExperience();
 			deathpoint.destroy();

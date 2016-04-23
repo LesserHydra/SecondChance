@@ -65,3 +65,27 @@ Secondary Particles:
   #Particle speed
   #Default: 0.1
   Speed: 0.1
+
+Play Sound on Deathpoint Created:
+  Enabled: true
+  Sound: ui.button.click
+  Volume: 1
+  Pitch: 1
+
+Play Sound on Deathpoint Opened:
+  Enabled: true
+  Sound: ui.button.click
+  Volume: 1
+  Pitch: 1
+
+Play Sound on Deathpoint Broken:
+  Enabled: true
+  Sound: ui.button.click
+  Volume: 1
+  Pitch: 1
+
+Play Sound on Deathpoint Forgotten:
+  Enabled: true
+  Sound: ui.button.click
+  Volume: 1
+  Pitch: 1
