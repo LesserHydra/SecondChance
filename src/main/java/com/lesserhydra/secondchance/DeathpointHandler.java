@@ -87,9 +87,10 @@ class DeathpointHandler implements Listener {
 		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
 	}
 	
+	//TODO: Should this have a different priority?
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerDeath(PlayerDeathEvent event) {
-		Player player = event.getEntity().getPlayer();
+		Player player = event.getEntity();
 		if (player == null) return;
 		
 		//Destroy old deathpoint(s)
@@ -101,9 +102,14 @@ class DeathpointHandler implements Listener {
 		//Get items, if applicable
 		ItemStack[] itemsToHold = null;
 		if (options.holdItems && !event.getKeepInventory()) {
+			//Store all inventory items that have been dropped, and remove from drops
 			itemsToHold = player.getInventory().getContents();
-			event.getDrops().removeAll(Arrays.asList(itemsToHold));
-			if (!Arrays.stream(itemsToHold).anyMatch(ItemStackUtils::isValid)) itemsToHold = null;
+			for (int i = 0; i < itemsToHold.length; i++) {
+				boolean wasRemoved = event.getDrops().remove(itemsToHold[i]);
+				if (!wasRemoved) itemsToHold[i] = null;
+			}
+			//If no items were found, return null
+			if (Arrays.stream(itemsToHold).noneMatch(ItemStackUtils::isValid)) itemsToHold = null;
 		}
 		
 		//Get exp, if applicable
