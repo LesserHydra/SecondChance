@@ -8,7 +8,7 @@ public final class ExpUtil {
 	 * @return See above
 	 */
 	public static int calculateXpFromLevel(int currentLevel) {
-		if (currentLevel < 17) return (int) (currentLevel*currentLevel + 6*currentLevel);
+		if (currentLevel < 17) return currentLevel*currentLevel + 6*currentLevel;
 		if (currentLevel < 32) return (int) (2.5*currentLevel*currentLevel - 40.5*currentLevel + 360);
 		return (int) (4.5*currentLevel*currentLevel - 162.5*currentLevel + 2220);
 	}
@@ -19,8 +19,8 @@ public final class ExpUtil {
 	 * @return See above
 	 */
 	public static int calculateXpForNextLevel(int currentLevel) {
-		if (currentLevel < 17) return 2*currentLevel + 7;
-		if (currentLevel < 32) return 5*currentLevel - 38;
+		if (currentLevel < 16) return 2*currentLevel + 7;
+		if (currentLevel < 31) return 5*currentLevel - 38;
 		return 9*currentLevel - 158;
 	}
 	

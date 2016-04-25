@@ -87,8 +87,8 @@ class DeathpointHandler implements Listener {
 		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
 	}
 	
-	//TODO: Should this have a different priority?
-	@EventHandler(priority = EventPriority.MONITOR)
+	//TODO: Too high?
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
 		if (player == null) return;
@@ -196,13 +196,15 @@ class DeathpointHandler implements Listener {
 	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
 		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
-		Optional<MetadataValue> found = event.getRightClicked().getMetadata("deathpoint")
-				.stream().filter(meta -> meta.getOwningPlugin() == plugin).findAny();
+		Optional<Deathpoint> found = event.getRightClicked().getMetadata("deathpoint").stream()
+				.filter(meta -> meta.getOwningPlugin() == plugin)
+				.map(meta -> (Deathpoint) meta.value())
+				.findAny();
 		if (!found.isPresent()) return;
 		event.setCancelled(true);
 		
 		Player player = event.getPlayer();
-		Deathpoint deathpoint = (Deathpoint) found.get().value();
+		Deathpoint deathpoint = (Deathpoint) found.get();
 		if (options.isProtected && !player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
 		
 		deathpoint.dropExperience();
@@ -219,11 +221,10 @@ class DeathpointHandler implements Listener {
 		if (!(holder instanceof Deathpoint)) return;
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
-		if (!deathpoint.isInvalid()) {
-			deathpoint.dropItems();
-			deathpoint.destroy();
-			remove(deathpoint);
-		}
+		if (deathpoint.isInvalid()) return;
+		deathpoint.dropItems();
+		deathpoint.destroy();
+		remove(deathpoint);
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {
