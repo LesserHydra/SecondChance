@@ -93,6 +93,9 @@ class DeathpointHandler implements Listener {
 		Player player = event.getEntity();
 		if (player == null) return;
 		
+		//KeepInventory seems to override all event settings
+		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
+		
 		//Destroy old deathpoint(s)
 		destroyOldDeathpoints(player);
 		
@@ -114,7 +117,7 @@ class DeathpointHandler implements Listener {
 		
 		//Get exp, if applicable
 		int exp = 0;
-		if (options.holdExp && !event.getKeepLevel()) { //FIXME: Still goes when gamerule keepInventory is true?
+		if (options.holdExp && !event.getKeepLevel()) {
 			exp = ExpUtil.calculateXpFromLevel(player.getLevel())
 					+ ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
 			event.setDroppedExp(0);

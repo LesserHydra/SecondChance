@@ -178,6 +178,7 @@ public class DeathpointHandlerTest {
 		ItemStack[] items = {new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.APPLE, 23),
 				new ItemStack(Material.TORCH, 59), new ItemStack(Material.GOLD_NUGGET, 5), new ItemStack(Material.WRITTEN_BOOK)};
 		
+		when(mockWorld1.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
 		deathpointHandler.initWorld(mockWorld1);
 		
 		//Mock player
