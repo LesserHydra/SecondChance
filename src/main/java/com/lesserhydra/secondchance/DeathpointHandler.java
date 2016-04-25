@@ -66,6 +66,10 @@ class DeathpointHandler implements Listener {
 		worldDeathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
 		deathpoints.put(world.getName(), worldDeathpoints);
 		
+		//Add initial "safe" positions to all online players
+		world.getPlayers().stream()
+				.forEach(player -> player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0))));
+		
 		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
 	}
 	
