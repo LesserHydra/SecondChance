@@ -12,21 +12,9 @@ When a player dies, a floating death-point will appear at the last "safe" locati
 
 A death-point contains all items dropped by the player on death, as well as the player's experience points. Accessing it will allow removal of items, and will grant stored exp. On destruction, the death-point will drop all contents _except for exp_ into the world.
 
-##Configurable
-* Particle effects
-* What is stored on death (Items and/or exp)
-* What is lost on second death (Items and/or exp, or nothing)
-* How many death-points a player can have at once
-* Whether access is limited to the original owner
-
 ##Current Plans
 * Configurable sounds
 * Permissions
 * Minor administration commands
-* Change hitbox system to use ghosted barrier blocks? (Might require ProtocolLib?)
+* Change hitbox system to use ghosted barrier blocks?
 * Better handling of IOExceptions
-* Check compatibility with base Bukkit
-
-##Known issues
-* The stored experience points are sometimes off ever so slightly when dealing with high levels
-* If a player is in spectator mode, the plugin is reloaded, and the player dies without switching modes, a deathpoint will not spawn. (Incredibly minor issue)

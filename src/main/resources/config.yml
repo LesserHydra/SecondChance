@@ -50,6 +50,7 @@ Particle Timer Delay: 20
 #Primary particles (Show location to click, by default)
 Primary Particles:
   #Particle type enum; Must be a valid particle type!
+  #https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Particle.html
   #Default: PORTAL
   Type: PORTAL
   #Number of particles
@@ -65,6 +66,7 @@ Primary Particles:
 #Secondary particles (Show proximity, by default)
 Secondary Particles:
   #Particle type enum; Must be a valid particle type!
+  #https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Particle.html
   #Default: END_ROD
   Type: END_ROD
   #Number of particles
