@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
-## [0.4]
+## [0.4] - 2016-04-26
 This update adds a reload command, fixes a few bugs, and teaches the plugin to play nicely.
 ### Added
 - Added reload command
