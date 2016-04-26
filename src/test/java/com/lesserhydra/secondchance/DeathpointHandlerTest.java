@@ -2,6 +2,7 @@ package com.lesserhydra.secondchance;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
@@ -9,18 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Stream;
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -36,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.*;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -47,14 +44,12 @@ import com.lesserhydra.testing.Capsule;
 @PowerMockIgnore("javax.management.*")
 public class DeathpointHandlerTest {
 	
-	SecondChance mockPlugin;
-	DeathpointHandler deathpointHandler;
-	World mockWorld1;
+	private SecondChance mockPlugin;
+	private Map<String, SaveHandler> mockedSaves = new HashMap<>();
 	
-	Player mockPlayer;
+	private DeathpointHandler deathpointHandler;
 	
-	Map<World, SaveHandler> mockedSaveHandlers;
-	
+	//TODO: How much can be made static?
 	@Before public void init() {
 		PowerMockito.mockStatic(Bukkit.class, JavaPlugin.class);
 		
@@ -63,126 +58,100 @@ public class DeathpointHandlerTest {
 		Server mockServer = mock(Server.class);
 		BDDMockito.given(Bukkit.getScheduler()).willReturn(mockScheduler);
 		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
-		
 		//Inventory creation
-		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(invoke -> {
-			Capsule<ItemStack[]> contents = new Capsule<>();
-			Inventory inv = mock(Inventory.class);
-			doAnswer(i -> contents.set(i.getArgumentAt(0, ItemStack[].class))).when(inv).setContents(any(ItemStack[].class));
-			when(inv.getContents()).then(i -> contents.get());
-			return inv;
-		});
+		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(DeathpointHandlerTest::createMockInventory);
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
-		when(mockPlugin.getSaveHandler(any(World.class))).then(invoke -> mockedSaveHandlers.get(invoke.getArgumentAt(0, World.class)));
+		when(mockPlugin.getSaveHandler(any(World.class))).then(this::getMockSaveHandler);
 		BDDMockito.given(JavaPlugin.getPlugin(eq(SecondChance.class))).willReturn(mockPlugin);
-		
-		//World
-		mockWorld1 = mock(World.class);
-		when(mockWorld1.getName()).thenReturn("world1");
-		
-		//ArmorStand spawning
-		when(mockWorld1.spawnEntity(any(Location.class), eq(EntityType.ARMOR_STAND))).then(invoke -> {
-			//Location loc = invoke.getArgumentAt(0, Location.class);
-			ArmorStand mockArmorStand = mock(ArmorStand.class);
-			return mockArmorStand;
-		});
-		
-		//Block handling
-		Map<Location, Block> blockMap = new HashMap<>();
-		when(mockWorld1.getBlockAt(any(Location.class))).then(invoke -> {
-			Location loc = invoke.getArgumentAt(0, Location.class);
-			Location blockLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-			Block mockBlock = blockMap.get(blockLoc);
-			if (mockBlock != null) return mockBlock;
-			
-			mockBlock = mock(Block.class);
-			when(mockBlock.getLocation()).thenReturn(blockLoc.clone());
-			blockMap.put(blockLoc.clone(), mockBlock);
-			return mockBlock;
-		});
-		
-		//Chunk handling
-		Map<Location, Chunk> chunkMap = new HashMap<>();
-		when(mockWorld1.getChunkAt(any(Location.class))).then(invoke -> {
-			Location loc = invoke.getArgumentAt(0, Location.class);
-			Location chunkLoc = new Location(loc.getWorld(), Math.floorDiv(loc.getBlockX(), 16), 0, Math.floorDiv(loc.getBlockZ(), 16));
-			Chunk mockChunk = chunkMap.get(chunkLoc);
-			if (mockChunk != null) return mockChunk;
-			
-			mockChunk = mock(Chunk.class);
-			when(mockChunk.isLoaded()).thenReturn(true);
-			when(mockChunk.getWorld()).thenReturn(mockWorld1);
-			chunkMap.put(chunkLoc.clone(), mockChunk);
-			return mockChunk;
-		});
-		
-		//Player
-		mockPlayer = mock(Player.class);
-		when(mockPlayer.getUniqueId()).thenReturn(UUID.fromString("c1348e68-9704-4f8b-a41d-e79bea4dbb79"));
-		when(mockPlayer.getLocation()).thenReturn(new Location(mockWorld1, 0, 70, 0));
-		when(mockPlayer.getWorld()).thenReturn(mockWorld1);
-		
-		//Save handlers
-		mockedSaveHandlers = new HashMap<>();
-		SaveHandler mockSaveHandler1 = mock(SaveHandler.class);
-		when(mockSaveHandler1.stream()).thenReturn(Stream.of());
-		mockedSaveHandlers.put(mockWorld1, mockSaveHandler1);
 		
 		//Instantiate deathpoint handler
 		deathpointHandler = new DeathpointHandler(mockPlugin, new ConfigOptions(new YamlConfiguration()));
 	}
 	
 	//Tests hitbox creation/destruction
-	@Test public void hitboxes() {
-		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 100, 0), null, 50);
-		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -100, 90, 0), null, 45);
-		SaveHandler preloadedSave = mock(SaveHandler.class);
-		when(preloadedSave.stream()).thenReturn(Stream.of(point1, point2));
-		mockedSaveHandlers.put(mockWorld1, preloadedSave);
+	@Test public void hitboxHandling() {
+		World mockWorld1 = mockBukkitWorld("world1");
+		World mockWorld2 = mockBukkitWorld("world2");
 		
-		//Plugin is loaded, both in loaded chunks
+		Player mockPlayer = mock(Player.class);
+		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
+		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 0, 0), null, 0);
+		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0);
+		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0);
+		SaveHandler saveWorld1 = mockPlugin.getSaveHandler(mockWorld1);
+		SaveHandler saveWorld2 = mockPlugin.getSaveHandler(mockWorld2);
+		saveWorld1.put(point1);
+		saveWorld1.put(point2);
+		saveWorld2.put(point3);
+		
+		//When plugin is loaded (and chunks are loaded)
 		deathpointHandler.initWorld(mockWorld1);
-		assertNotNull(Whitebox.getInternalState(point1, Entity.class));
-		assertNotNull(Whitebox.getInternalState(point2, Entity.class));
+		deathpointHandler.initWorld(mockWorld2);
+		assertNotNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
-		//First is unloaded
+		//When first is unloaded
 		deathpointHandler.onChunkUnload(new ChunkUnloadEvent(point1.getLocation().getChunk()));
-		assertNull(Whitebox.getInternalState(point1, Entity.class));
-		assertNotNull(Whitebox.getInternalState(point2, Entity.class));
+		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
-		//Second is unloaded
+		//When second is unloaded
 		deathpointHandler.onChunkUnload(new ChunkUnloadEvent(point2.getLocation().getChunk()));
-		assertNull(Whitebox.getInternalState(point1, Entity.class));
-		assertNull(Whitebox.getInternalState(point2, Entity.class));
+		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
-		//First is loaded
-		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point1.getLocation().getChunk(), false));
-		assertNotNull(Whitebox.getInternalState(point1, Entity.class));
-		assertNull(Whitebox.getInternalState(point2, Entity.class));
+		//When third is unloaded
+		deathpointHandler.onChunkUnload(new ChunkUnloadEvent(point3.getLocation().getChunk()));
+		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
-		//Second is loaded
+		//When third is loaded
+		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point3.getLocation().getChunk(), false));
+		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
+		
+		//When second is loaded
 		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point2.getLocation().getChunk(), false));
-		assertNotNull(Whitebox.getInternalState(point1, Entity.class));
-		assertNotNull(Whitebox.getInternalState(point2, Entity.class));
+		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
-		//Plugin is disabled
+		//When first is loaded
+		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point1.getLocation().getChunk(), false));
+		assertNotNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
+		
+		//When plugin is disabled
 		deathpointHandler.deinit();
-		assertNull(Whitebox.getInternalState(point1, Entity.class));
-		assertNull(Whitebox.getInternalState(point2, Entity.class));
+		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
+		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
+		assertNull(Whitebox.getInternalState(point3, ArmorStand.class));
 	}
 	
 	//Test compatibility with other plugins that modify drops on death
 	@Test public void itemHandling() {
-		ItemStack[] items = {new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.APPLE, 23),
-				new ItemStack(Material.TORCH, 59), new ItemStack(Material.GOLD_NUGGET, 5), new ItemStack(Material.WRITTEN_BOOK)};
+		/*----------Given----------*/
+		//Items
+		ItemStack[] items = {new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.APPLE), new ItemStack(Material.TORCH),
+				new ItemStack(Material.GOLD_NUGGET), new ItemStack(Material.WRITTEN_BOOK)};
 		
-		when(mockWorld1.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
-		deathpointHandler.initWorld(mockWorld1);
+		World mockWorld = mockBukkitWorld("world1");
+		when(mockWorld.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
+		deathpointHandler.initWorld(mockWorld);
 		
-		//Mock player
-		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(mockPlugin, new Location(mockWorld1, 10, 60, -10))));
+		//Player
+		Player mockPlayer = mock(Player.class);
+		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
+		when(mockPlayer.getWorld()).thenReturn(mockWorld);
+		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(mockPlugin, new Location(mockWorld, 10, 60, -10))));
 		PlayerInventory mockInventory = mock(PlayerInventory.class);
 		when(mockPlayer.getInventory()).thenReturn(mockInventory);
 		
@@ -191,24 +160,49 @@ public class DeathpointHandlerTest {
 		//Gold is added by another plugin
 		List<ItemStack> drops = new ArrayList<>(Arrays.asList(items[0], items[1], items[2], items[3]));
 		
+		/*----------When----------*/
 		//Send event
 		PlayerDeathEvent event = new PlayerDeathEvent(mockPlayer, drops, 10, "");
 		event.setKeepInventory(false);
 		deathpointHandler.onPlayerDeath(event);
 		
-		//Gold should still drop
+		/*----------Then----------*/
+		//Gold (only) should still drop
 		assertEquals(1, event.getDrops().size());
-		assertEquals(Material.GOLD_NUGGET, event.getDrops().get(0).getType());
+		assertEquals(items[3], event.getDrops().get(0));
 		
 		//Should be one deathpoint
 		Map<String, Deque<Deathpoint>> deathpointMap = Whitebox.getInternalState(deathpointHandler, "deathpoints");
 		Deque<Deathpoint> deathpoints = deathpointMap.get(mockPlayer.getWorld().getName());
 		assertEquals(1, deathpoints.size());
 		
-		//Book should not be stored
+		//Book and gold should not be stored
 		List<ItemStack> resultingContents = Arrays.asList(deathpoints.peek().getInventory().getContents());
 		assertTrue(resultingContents.containsAll(Arrays.asList(items[0], items[1], items[2])));
+		assertFalse(resultingContents.contains(items[3]));
 		assertFalse(resultingContents.contains(items[4]));
+	}
+	
+	private SaveHandler getMockSaveHandler(InvocationOnMock invoke) {
+		String worldName = invoke.getArgumentAt(0, World.class).getName();
+		SaveHandler result = mockedSaves.get(worldName);
+		if (result != null) return result;
+		
+		result = mock(SaveHandler.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+		doNothing().when(result).load();
+		doNothing().when(result).save();
+		Whitebox.setInternalState(result, YamlConfiguration.class, new YamlConfiguration());
+		
+		mockedSaves.put(worldName, result);
+		return result;
+	}
+	
+	private static Inventory createMockInventory(InvocationOnMock invoke) {
+		Capsule<ItemStack[]> contents = new Capsule<>();
+		Inventory inv = mock(Inventory.class);
+		doAnswer(i -> contents.set(i.getArgumentAt(0, ItemStack[].class))).when(inv).setContents(any(ItemStack[].class));
+		when(inv.getContents()).then(i -> contents.get());
+		return inv;
 	}
 	
 }

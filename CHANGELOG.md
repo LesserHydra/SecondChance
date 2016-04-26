@@ -13,7 +13,7 @@ This update adds a reload command, fixes a few bugs, and teaches the plugin to p
 - Stopped storing drops removed by other plugins
 ### Techinical
 - Began building off of base Bukkit API, instead of full Spigot jar
-- Began adding some unit-tests
+- Began adding unit-tests
 - Changed death event priority to HIGHEST from MONITOR
 
 ## [0.3] - 2016-04-22

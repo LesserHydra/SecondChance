@@ -12,13 +12,6 @@ When a player dies, a floating death-point will appear at the last "safe" locati
 
 A death-point contains all items dropped by the player on death, as well as the player's experience points. Accessing it will allow removal of items, and will grant stored exp. On destruction, the death-point will drop all contents _except for exp_ into the world.
 
-##Configurable
-* Particle effects
-* What is stored on death (Items and/or exp)
-* What is lost on second death (Items and/or exp, or nothing)
-* How many death-points a player can have at once
-* Whether access is limited to the original owner
-
 ##Current Plans
 * Configurable sounds
 * Permissions
