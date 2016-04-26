@@ -1,6 +1,20 @@
 # Change Log
 All notable changes to this project will be documented in this file.
-This project semi-adheres to [Semantic Versioning](http://semver.org/), or so I think.
+This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
+
+## [0.4]
+This update adds a reload command, fixes a few bugs, and teaches the plugin to play nicely.
+### Added
+- Added reload command
+### Fixed
+- Fixed keepInventory not being respected (Issue #1)
+- Fixed NPE caused by reload (Issue #3)
+- Fixed minor inaccuracy in experience calculation
+- Stopped storing drops removed by other plugins
+### Techinical
+- Began building off of base Bukkit API, instead of full Spigot jar
+- Began adding some unit-tests
+- Changed death event priority to HIGHEST from MONITOR
 
 ## [0.3] - 2016-04-22
 This update adds a configuration file with quite a few options.
@@ -23,20 +37,22 @@ First official release
 - Deathpoints are now grouped by world
 - Prepared for eventual configuration implementation
 ### Changed
-- Moved to Java 8
 - Changed save file format
-- Refactored all the things
 ### Fixed
 - Contents not dropping in unloaded chunks
 - Others?
+### Technical
+- Moved to Java 8
+- Refactored all the things
 
 ## [0.1] - 2016-04-05
 First unofficial "release"
 ### Added
 - Support for 1.9
-### Changed
+### Technical
 - Rewrote just about everything everything
 
+[0.4]: https://github.com/Roboboy64/SecondChance/compare/0.3...0.4
 [0.3]: https://github.com/Roboboy64/SecondChance/compare/0.2.1...0.3
 [0.2.1]: https://github.com/Roboboy64/SecondChance/compare/0.2...0.2.1
 [0.2]: https://github.com/Roboboy64/SecondChance/compare/0.1...0.2
