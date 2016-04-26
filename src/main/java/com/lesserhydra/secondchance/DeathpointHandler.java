@@ -40,12 +40,17 @@ class DeathpointHandler implements Listener {
 	
 	private final Map<String, Deque<Deathpoint>> deathpoints = new HashMap<>();
 	private final SecondChance plugin;
-	private final ConfigOptions options;
+	private ConfigOptions options;
 	
 	
 	public DeathpointHandler(SecondChance plugin, ConfigOptions options) {
 		this.plugin = plugin;
 		this.options = options;
+	}
+	
+	public void reload(ConfigOptions newOptions) {
+		options = newOptions;
+		deinit();
 	}
 	
 	public void deinit() {
@@ -65,6 +70,10 @@ class DeathpointHandler implements Listener {
 				.forEachOrdered(worldDeathpoints::add);
 		worldDeathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
 		deathpoints.put(world.getName(), worldDeathpoints);
+		
+		//Add initial "safe" positions to all online players
+		world.getPlayers().stream()
+				.forEach(player -> player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0))));
 		
 		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
 	}
@@ -87,10 +96,14 @@ class DeathpointHandler implements Listener {
 		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
 	}
 	
-	@EventHandler(priority = EventPriority.MONITOR)
+	//TODO: Too high?
+	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDeath(PlayerDeathEvent event) {
-		Player player = event.getEntity().getPlayer();
+		Player player = event.getEntity();
 		if (player == null) return;
+		
+		//KeepInventory seems to override all event settings
+		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
 		
 		//Destroy old deathpoint(s)
 		destroyOldDeathpoints(player);
@@ -101,14 +114,19 @@ class DeathpointHandler implements Listener {
 		//Get items, if applicable
 		ItemStack[] itemsToHold = null;
 		if (options.holdItems && !event.getKeepInventory()) {
+			//Store all inventory items that have been dropped, and remove from drops
 			itemsToHold = player.getInventory().getContents();
-			event.getDrops().removeAll(Arrays.asList(itemsToHold));
-			if (!Arrays.stream(itemsToHold).anyMatch(ItemStackUtils::isValid)) itemsToHold = null;
+			for (int i = 0; i < itemsToHold.length; i++) {
+				boolean wasRemoved = event.getDrops().remove(itemsToHold[i]);
+				if (!wasRemoved) itemsToHold[i] = null;
+			}
+			//If no items were found, return null
+			if (Arrays.stream(itemsToHold).noneMatch(ItemStackUtils::isValid)) itemsToHold = null;
 		}
 		
 		//Get exp, if applicable
 		int exp = 0;
-		if (options.holdExp && !event.getKeepLevel()) { //FIXME: Still goes when gamerule keepInventory is true?
+		if (options.holdExp && !event.getKeepLevel()) {
 			exp = ExpUtil.calculateXpFromLevel(player.getLevel())
 					+ ExpUtil.calculateXpFromProgress(player.getLevel(), player.getExp());
 			event.setDroppedExp(0);
@@ -190,13 +208,15 @@ class DeathpointHandler implements Listener {
 	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
 		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
-		Optional<MetadataValue> found = event.getRightClicked().getMetadata("deathpoint")
-				.stream().filter(meta -> meta.getOwningPlugin() == plugin).findAny();
+		Optional<Deathpoint> found = event.getRightClicked().getMetadata("deathpoint").stream()
+				.filter(meta -> meta.getOwningPlugin() == plugin)
+				.map(meta -> (Deathpoint) meta.value())
+				.findAny();
 		if (!found.isPresent()) return;
 		event.setCancelled(true);
 		
 		Player player = event.getPlayer();
-		Deathpoint deathpoint = (Deathpoint) found.get().value();
+		Deathpoint deathpoint = (Deathpoint) found.get();
 		if (options.isProtected && !player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
 		
 		deathpoint.dropExperience();
@@ -213,11 +233,10 @@ class DeathpointHandler implements Listener {
 		if (!(holder instanceof Deathpoint)) return;
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
-		if (!deathpoint.isInvalid()) {
-			deathpoint.dropItems();
-			deathpoint.destroy();
-			remove(deathpoint);
-		}
+		if (deathpoint.isInvalid()) return;
+		deathpoint.dropItems();
+		deathpoint.destroy();
+		remove(deathpoint);
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {

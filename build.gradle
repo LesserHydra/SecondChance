@@ -8,17 +8,27 @@ apply plugin: 'eclipse'
 import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens
 
-version = generateVersion('0.3')
-String pluginName = 'SecondChance'
+version = generateVersion('0.4')
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
-String author = 'Roboboy'
 
 repositories {
   mavenLocal()
+  mavenCentral()
+  maven {
+    url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+  }
 }
 
 dependencies {
-	compile group: 'org.spigotmc', name: 'spigot', version: '1.9.2-R0.1-SNAPSHOT'
+  //Bukkit api
+  compile 'org.bukkit:bukkit:1.9.2-R0.1-SNAPSHOT'
+
+  testCompile 'junit:junit:4.12'
+  testCompile 'org.assertj:assertj-core:3.4.+'
+  testCompile 'org.powermock:powermock-core:1.6.+'
+  testCompile 'org.powermock:powermock-api-mockito:1.6.+'
+  testCompile 'org.powermock:powermock-module-junit4:1.6.+'
+  testCompile 'org.mockito:mockito-all:1.10.+'
 }
 
 task generatePluginYaml(type: Copy) {
@@ -26,9 +36,7 @@ task generatePluginYaml(type: Copy) {
   into 'src/main/resources/'
   filter(ReplaceTokens, tokens: [
 		version:		version,
-    pluginName: pluginName,
     mainClass:  pluginMain,
-    author:			author,
   ])
 }
 

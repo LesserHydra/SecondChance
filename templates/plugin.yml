@@ -1,4 +1,12 @@
-name: @pluginName@
+name: SecondChance
 main: @mainClass@
 version: @version@
-author: @author@
+author: Roboboy
+
+commands:
+  SecondChance:
+    aliases: [chance, sc]
+    description: Main command for SecondChance
+    usage: /<command> <reload>
+    permission: secondchance.maincommand
+    permissions message: You don't have <permission>
