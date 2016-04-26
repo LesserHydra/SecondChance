@@ -9,9 +9,7 @@ import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens
 
 version = generateVersion('0.4')
-String pluginName = 'SecondChance'
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
-String author = 'Roboboy'
 
 repositories {
   mavenLocal()
@@ -38,9 +36,7 @@ task generatePluginYaml(type: Copy) {
   into 'src/main/resources/'
   filter(ReplaceTokens, tokens: [
 		version:		version,
-    pluginName: pluginName,
     mainClass:  pluginMain,
-    author:			author,
   ])
 }
 

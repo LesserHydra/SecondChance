@@ -40,12 +40,17 @@ class DeathpointHandler implements Listener {
 	
 	private final Map<String, Deque<Deathpoint>> deathpoints = new HashMap<>();
 	private final SecondChance plugin;
-	private final ConfigOptions options;
+	private ConfigOptions options;
 	
 	
 	public DeathpointHandler(SecondChance plugin, ConfigOptions options) {
 		this.plugin = plugin;
 		this.options = options;
+	}
+	
+	public void reload(ConfigOptions newOptions) {
+		options = newOptions;
+		deinit();
 	}
 	
 	public void deinit() {
