@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
+## [0.5] - Unreleased
+
 ## [0.4] - 2016-04-26
 This update adds a reload command, fixes a few bugs, and teaches the plugin to play nicely.
 ### Added
@@ -52,6 +54,7 @@ First unofficial "release"
 ### Technical
 - Rewrote just about everything everything
 
+[0.5]: https://github.com/Roboboy64/SecondChance/compare/0.4...develop
 [0.4]: https://github.com/Roboboy64/SecondChance/compare/0.3...0.4
 [0.3]: https://github.com/Roboboy64/SecondChance/compare/0.2.1...0.3
 [0.2.1]: https://github.com/Roboboy64/SecondChance/compare/0.2...0.2.1
