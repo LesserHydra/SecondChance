@@ -8,7 +8,7 @@ apply plugin: 'eclipse'
 import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens
 
-version = generateVersion('0.4')
+version = generateVersion('0.5')
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
 
 repositories {
@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
   //Bukkit api
-  compile 'org.bukkit:bukkit:1.9.2-R0.1-SNAPSHOT'
+  compile 'org.bukkit:bukkit:1.9-R0.1-SNAPSHOT'
 
   testCompile 'junit:junit:4.12'
   testCompile 'org.assertj:assertj-core:3.4.+'

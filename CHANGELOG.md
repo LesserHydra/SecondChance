@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
+## [0.5] - 2016-04-28
+This update fixes compatibility with Bukkit 1.9 and improves the check for safe locations
+### Added
+- Added a safety mechanism for when a hitbox armorstand persists to the world (#11)
+### Changed
+- Location safety check now runs on a timer instead of using movement event (#5)
+### Fixed
+- Fixed location not being considered "safe" when riding a horse (#6)
+- Fixed location being considered "safe" when over a ledge (#7)
+### Technical
+- Began building off of Bukkit 1.9 instead of 1.9.2 (#10)
+- Added tests for location safety check
+
 ## [0.4] - 2016-04-26
 This update adds a reload command, fixes a few bugs, and teaches the plugin to play nicely.
 ### Added
@@ -52,6 +65,7 @@ First unofficial "release"
 ### Technical
 - Rewrote just about everything everything
 
+[0.5]: https://github.com/Roboboy64/SecondChance/compare/0.4...0.5
 [0.4]: https://github.com/Roboboy64/SecondChance/compare/0.3...0.4
 [0.3]: https://github.com/Roboboy64/SecondChance/compare/0.2.1...0.3
 [0.2.1]: https://github.com/Roboboy64/SecondChance/compare/0.2...0.2.1

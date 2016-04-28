@@ -24,7 +24,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldInitEvent;
@@ -43,14 +42,15 @@ class DeathpointHandler implements Listener {
 	private ConfigOptions options;
 	
 	
-	public DeathpointHandler(SecondChance plugin, ConfigOptions options) {
+	public DeathpointHandler(SecondChance plugin) {
 		this.plugin = plugin;
-		this.options = options;
 	}
 	
-	public void reload(ConfigOptions newOptions) {
-		options = newOptions;
-		deinit();
+	public void init(ConfigOptions options) {
+		this.options = options;
+		Bukkit.getWorlds().forEach(this::initWorld);
+		Bukkit.getScheduler().runTaskTimer(plugin, () -> Bukkit.getOnlinePlayers().forEach(this::setSafePosition), 
+				options.locationCheckDelay, options.locationCheckDelay);
 	}
 	
 	public void deinit() {
@@ -60,22 +60,9 @@ class DeathpointHandler implements Listener {
 		deathpoints.values().stream()
 				.flatMap(Collection::stream)
 				.forEach(Deathpoint::despawnHitbox);
+		//Clear members
 		deathpoints.clear();
-	}
-	
-	public void initWorld(World world) {
-		Deque<Deathpoint> worldDeathpoints = new LinkedList<>();
-		plugin.getSaveHandler(world).stream()
-				.sorted((p1, p2) -> p1.getCreationInstant().compareTo(p2.getCreationInstant()))
-				.forEachOrdered(worldDeathpoints::add);
-		worldDeathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
-		deathpoints.put(world.getName(), worldDeathpoints);
-		
-		//Add initial "safe" positions to all online players
-		world.getPlayers().stream()
-				.forEach(player -> player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0))));
-		
-		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
+		options = null;
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -109,7 +96,7 @@ class DeathpointHandler implements Listener {
 		destroyOldDeathpoints(player);
 		
 		//Get location
-		Location location = findLocation(player);
+		Location location = getSafePosition(player);
 		
 		//Get items, if applicable
 		ItemStack[] itemsToHold = null;
@@ -141,23 +128,6 @@ class DeathpointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void setLastSafePosition(PlayerMoveEvent event) {
-		if (!((Entity)event.getPlayer()).isOnGround()) return;
-		
-		Player player = event.getPlayer();
-		Location loc = player.getLocation();
-		//Check bottom block
-		if (loc.getBlock().getType().isSolid()) return;
-		if (loc.getBlock().isLiquid()) return;
-		//Check top block
-		loc.add(0, 1, 0);
-		if (loc.getBlock().getType().isSolid()) return;
-		if (loc.getBlock().isLiquid()) return;
-		
-		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, loc));
-	}
-	
-	@EventHandler(priority = EventPriority.MONITOR)
 	public void onChunkUnload(ChunkUnloadEvent event) {
 		deathpoints.get(event.getWorld().getName()).stream()
 			.filter((point) -> event.getChunk().equals(point.getLocation().getChunk()))
@@ -166,6 +136,14 @@ class DeathpointHandler implements Listener {
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onChunkLoad(ChunkLoadEvent event) {
+		//Remove residual hitboxes
+		Arrays.stream(event.getChunk().getEntities())
+				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
+				.map(e -> (ArmorStand) e)
+				.filter(Deathpoint::armorstandIsHitbox)
+				.forEach(Entity::remove);
+		
+		//Spawn deathpoint hitboxes
 		deathpoints.get(event.getWorld().getName()).stream()
 				.filter((point) -> event.getChunk().equals(point.getLocation().getChunk()))
 				.forEach(Deathpoint::spawnHitbox);
@@ -239,8 +217,34 @@ class DeathpointHandler implements Listener {
 		remove(deathpoint);
 	}
 	
+	private void initWorld(World world) {
+		//Remove residual hitboxes in world
+		world.getEntities().stream()
+				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
+				.map(e -> (ArmorStand) e)
+				.filter(Deathpoint::armorstandIsHitbox)
+				.forEach(Entity::remove);
+		
+		//Initiate all deathpoints in world
+		Deque<Deathpoint> worldDeathpoints = new LinkedList<>();
+		plugin.getSaveHandler(world).stream()
+				.sorted((p1, p2) -> p1.getCreationInstant().compareTo(p2.getCreationInstant()))
+				.forEachOrdered(worldDeathpoints::add);
+		worldDeathpoints.forEach(Deathpoint::spawnHitbox);
+		deathpoints.put(world.getName(), worldDeathpoints);
+		
+		//Add initial "safe" positions to all online players in world
+		world.getPlayers().stream()
+				.forEach(player -> player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0))));
+		
+		//Start particle timer for world
+		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
+	}
+	
 	private void runParticles(Deathpoint deathpoint) {
 		Location location = deathpoint.getLocation();
+		if (!location.getChunk().isLoaded()) return;
+		
 		location.getWorld().spawnParticle(options.particlePrimary, location, options.particlePrimaryCount,
 				options.particlePrimarySpread, options.particlePrimarySpread, options.particlePrimarySpread,
 				options.particlePrimarySpeed);
@@ -271,11 +275,17 @@ class DeathpointHandler implements Listener {
 		plugin.getSaveHandler(deathpoint.getWorld()).remove(deathpoint);
 	}
 	
-	private Location findLocation(Player player) {
+	private void setSafePosition(Player player) {
+		Location safeLoc = Util.entityLocationIsSafe(player);
+		if (safeLoc == null) return;
+		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, safeLoc));
+	}
+	
+	private Location getSafePosition(Player player) {
 		Location loc = (Location) player.getMetadata("lastSafePosition").stream()
 				.filter(value -> value.getOwningPlugin() == plugin)
 				.findFirst().get().value();
-		return loc.getBlock().getLocation().add(0.5, 0, 0.5);
+		return new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() + 1, loc.getBlockZ() + 0.5);
 	}
 	
 }

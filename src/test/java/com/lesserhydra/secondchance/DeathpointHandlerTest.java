@@ -49,7 +49,6 @@ public class DeathpointHandlerTest {
 	
 	private DeathpointHandler deathpointHandler;
 	
-	//TODO: How much can be made static?
 	@Before public void init() {
 		PowerMockito.mockStatic(Bukkit.class, JavaPlugin.class);
 		
@@ -67,13 +66,14 @@ public class DeathpointHandlerTest {
 		BDDMockito.given(JavaPlugin.getPlugin(eq(SecondChance.class))).willReturn(mockPlugin);
 		
 		//Instantiate deathpoint handler
-		deathpointHandler = new DeathpointHandler(mockPlugin, new ConfigOptions(new YamlConfiguration()));
+		deathpointHandler = new DeathpointHandler(mockPlugin);
 	}
 	
-	//Tests hitbox creation/destruction
+	//Test hitbox creation/destruction
 	@Test public void hitboxHandling() {
 		World mockWorld1 = mockBukkitWorld("world1");
 		World mockWorld2 = mockBukkitWorld("world2");
+		BDDMockito.given(Bukkit.getWorlds()).willReturn(Arrays.asList(mockWorld1, mockWorld2));
 		
 		Player mockPlayer = mock(Player.class);
 		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
@@ -87,8 +87,7 @@ public class DeathpointHandlerTest {
 		saveWorld2.put(point3);
 		
 		//When plugin is loaded (and chunks are loaded)
-		deathpointHandler.initWorld(mockWorld1);
-		deathpointHandler.initWorld(mockWorld2);
+		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
 		assertNotNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
@@ -143,9 +142,10 @@ public class DeathpointHandlerTest {
 		ItemStack[] items = {new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.APPLE), new ItemStack(Material.TORCH),
 				new ItemStack(Material.GOLD_NUGGET), new ItemStack(Material.WRITTEN_BOOK)};
 		
-		World mockWorld = mockBukkitWorld("world1");
+		World mockWorld = mockBukkitWorld("world");
 		when(mockWorld.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
-		deathpointHandler.initWorld(mockWorld);
+		BDDMockito.given(Bukkit.getWorlds()).willReturn(Arrays.asList(mockWorld));
+		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
 		
 		//Player
 		Player mockPlayer = mock(Player.class);
