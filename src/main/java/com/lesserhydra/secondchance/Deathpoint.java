@@ -98,7 +98,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
 		hitbox.setGravity(false);
 		hitbox.setVisible(false);
-		hitbox.setInvulnerable(true);
 		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.getPlugin(SecondChance.class), this));
 	}
 	
