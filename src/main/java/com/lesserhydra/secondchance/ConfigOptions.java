@@ -47,7 +47,7 @@ class ConfigOptions {
 		this.breakOnHit = config.getBoolean("Break Deathpoint On Leftclick", false);
 		this.maxPerPlayer = config.getInt("Player Deathpoint Maximum", 1);
 		this.isProtected = config.getBoolean("Owner Based", true);
-		this.locationCheckDelay = config.getLong("Safe Location Timer Delay", 60);
+		this.locationCheckDelay = config.getLong("Safe Location Timer Delay", 40);
 		this.particleDelay = config.getLong("Particle Timer Delay", 20);
 		
 		this.particlePrimary = getEnum("Primary Particles.Type", Particle.PORTAL, config);

@@ -6,6 +6,10 @@ Config version: 1
 # Basic Configuration #
 #######################
 
+#Delay for timer that looks for "safe" locations to spawn a player's deathpoint at
+#Default: 40
+Safe Location Timer Delay: 40
+
 #Whether deathpoints should hold items on death
 #Default: true
 Hold Items: true
