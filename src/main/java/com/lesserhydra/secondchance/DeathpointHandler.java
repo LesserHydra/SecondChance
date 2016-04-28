@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -135,6 +136,14 @@ class DeathpointHandler implements Listener {
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onChunkLoad(ChunkLoadEvent event) {
+		//Remove residual hitboxes
+		Arrays.stream(event.getChunk().getEntities())
+				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
+				.map(e -> (ArmorStand) e)
+				.filter(Deathpoint::armorstandIsHitbox)
+				.forEach(Entity::remove);
+		
+		//Spawn deathpoint hitboxes
 		deathpoints.get(event.getWorld().getName()).stream()
 				.filter((point) -> event.getChunk().equals(point.getLocation().getChunk()))
 				.forEach(Deathpoint::spawnHitbox);
@@ -209,22 +218,33 @@ class DeathpointHandler implements Listener {
 	}
 	
 	private void initWorld(World world) {
+		//Remove residual hitboxes in world
+		world.getEntities().stream()
+				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
+				.map(e -> (ArmorStand) e)
+				.filter(Deathpoint::armorstandIsHitbox)
+				.forEach(Entity::remove);
+		
+		//Initiate all deathpoints in world
 		Deque<Deathpoint> worldDeathpoints = new LinkedList<>();
 		plugin.getSaveHandler(world).stream()
 				.sorted((p1, p2) -> p1.getCreationInstant().compareTo(p2.getCreationInstant()))
 				.forEachOrdered(worldDeathpoints::add);
-		worldDeathpoints.forEach(deathPoint -> deathPoint.spawnHitbox());
+		worldDeathpoints.forEach(Deathpoint::spawnHitbox);
 		deathpoints.put(world.getName(), worldDeathpoints);
 		
-		//Add initial "safe" positions to all online players
+		//Add initial "safe" positions to all online players in world
 		world.getPlayers().stream()
 				.forEach(player -> player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0))));
 		
+		//Start particle timer for world
 		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {
 		Location location = deathpoint.getLocation();
+		if (!location.getChunk().isLoaded()) return;
+		
 		location.getWorld().spawnParticle(options.particlePrimary, location, options.particlePrimaryCount,
 				options.particlePrimarySpread, options.particlePrimarySpread, options.particlePrimarySpread,
 				options.particlePrimarySpeed);

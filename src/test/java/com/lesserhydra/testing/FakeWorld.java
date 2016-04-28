@@ -1,9 +1,6 @@
 package com.lesserhydra.testing;
 
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.Chunk;
@@ -59,15 +56,17 @@ public abstract class FakeWorld implements World {
 		mockChunk = mock(Chunk.class);
 		when(mockChunk.isLoaded()).thenReturn(true);
 		when(mockChunk.getWorld()).thenReturn(this);
+		when(mockChunk.getEntities()).thenReturn(new Entity[0]); //TODO: Temporary?
 		chunkMap.put(chunkLoc.clone(), mockChunk);
 		return mockChunk;
 	}
 	
 	@Override
 	public Entity spawnEntity(Location loc, EntityType type) {
-		Entity mockEntity = mock(type.getEntityClass());
+		Entity mockEntity = mock(type.getEntityClass(), withSettings().defaultAnswer(RETURNS_MOCKS));
 		when(mockEntity.getLocation()).then(i -> loc.clone());
 		when(mockEntity.getWorld()).thenReturn(this);
+		
 		return mockEntity;
 	}
 	

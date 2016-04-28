@@ -9,6 +9,9 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -25,6 +28,7 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
  */
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
+	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
 	private final UUID ownerUniqueId;
@@ -99,6 +103,10 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		hitbox.setGravity(false);
 		hitbox.setVisible(false);
 		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.getPlugin(SecondChance.class), this));
+		
+		//Add attribute for identifying in case of persistance (Fallback, not relied upon for normal operation)
+		hitbox.getAttribute(Attribute.GENERIC_MAX_HEALTH)
+				.addModifier(new AttributeModifier(HITBOX_ATTRIBUTE_UUID, "isSecondChanceHitbox", 0, Operation.ADD_NUMBER));
 	}
 	
 	/**
@@ -211,6 +219,18 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		return ownerUniqueId.equals(other.getOwnerUniqueId())
 				&& location.equals(other.getLocation())
 				&& creationInstant.equals(other.getCreationInstant());
+	}
+	
+	/**
+	 * Checks if an armorstand was spawned for hitbox use. This is meant to be used as a safety net in cleaning up
+	 * armorstands left over by previous bugs/crashes/whatever. Do not use to identify hitboxes normally!
+	 * @param entity Armorstand to check
+	 * @return Whether armorstand was used as a hitbox
+	 */
+	public static boolean armorstandIsHitbox(ArmorStand entity) {
+		return entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers().stream()
+				.filter(mod -> HITBOX_ATTRIBUTE_UUID.equals(mod.getUniqueId()))
+				.anyMatch(mod -> "isSecondChanceHitbox".equals(mod.getName()));
 	}
 	
 	private Inventory createInventory(ItemStack[] items) {
