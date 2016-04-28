@@ -12,17 +12,18 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.util.Vector;
 import org.powermock.reflect.Whitebox;
 
 public abstract class FakeWorld implements World {
 	
 	private String name;
 	
-	private Map<Location, Chunk> chunkMap = new HashMap<>();
-	private Map<Location, Block> blockMap = new HashMap<>();
+	private Map<Vector, Chunk> chunkMap = new HashMap<>();
+	private Map<Vector, Block> blockMap = new HashMap<>();
 	
 	public static World mockBukkitWorld(String worldName) {
-		World mockWorld = mock(FakeWorld.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS));
+		World mockWorld = mock(FakeWorld.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS).stubOnly());
 		Whitebox.setInternalState(mockWorld, String.class, worldName, FakeWorld.class);
 		return mockWorld;
 	}
@@ -33,20 +34,25 @@ public abstract class FakeWorld implements World {
 	}
 	
 	@Override
-	public Block getBlockAt(Location loc) {
-		Location blockLoc = new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-		Block mockBlock = blockMap.get(blockLoc);
-		if (mockBlock != null) return mockBlock;
+	public Block getBlockAt(int x, int y, int z) {
+		Vector blockLoc = new Vector(x, y, z);
+		Block block = blockMap.get(blockLoc);
+		if (block != null) return block;
 		
-		mockBlock = mock(Block.class);
-		when(mockBlock.getLocation()).thenReturn(blockLoc.clone());
-		blockMap.put(blockLoc.clone(), mockBlock);
-		return mockBlock;
+		block = FakeBlock.mockBukkitBlock(this, x, y, z);
+		//when(mockBlock.getLocation()).thenReturn(new Location(this, blockLoc.getBlockX(), blockLoc.getBlockY(), blockLoc.getBlockZ()));
+		blockMap.put(blockLoc.clone(), block);
+		return block;
+	}
+	
+	@Override
+	public Block getBlockAt(Location loc) {
+		return getBlockAt(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 	}
 	
 	@Override
 	public Chunk getChunkAt(Location loc) {
-		Location chunkLoc = new Location(loc.getWorld(), Math.floorDiv(loc.getBlockX(), 16), 0, Math.floorDiv(loc.getBlockZ(), 16));
+		Vector chunkLoc = new Vector(Math.floorDiv(loc.getBlockX(), 16), 0, Math.floorDiv(loc.getBlockZ(), 16));
 		Chunk mockChunk = chunkMap.get(chunkLoc);
 		if (mockChunk != null) return mockChunk;
 		

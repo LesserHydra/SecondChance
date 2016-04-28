@@ -17,7 +17,7 @@ public class SecondChance extends JavaPlugin {
 	private static Plugin plugin;
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
-	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this, new ConfigOptions(getConfig()));
+	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
 	private final Map<String, SaveHandler> saveHandlers = new HashMap<>();
 	
 	
@@ -32,8 +32,8 @@ public class SecondChance extends JavaPlugin {
 		
 		//Register Deathpoint serializability
 		ConfigurationSerialization.registerClass(Deathpoint.class, "Deathpoint");
-		//Initiate all worlds
-		getServer().getWorlds().forEach(deathpointHandler::initWorld);
+		//Initiate deathpoint handler
+		deathpointHandler.init(new ConfigOptions(getConfig()));
 		//Register listener events
 		getServer().getPluginManager().registerEvents(deathpointHandler, this);
 	}
@@ -68,8 +68,7 @@ public class SecondChance extends JavaPlugin {
 		
 		//Reload everything
 		reloadConfig();
-		deathpointHandler.reload(new ConfigOptions(getConfig()));
-		getServer().getWorlds().forEach(deathpointHandler::initWorld);
+		deathpointHandler.init(new ConfigOptions(getConfig()));
 		
 		//Finished
 		sender.sendMessage(ChatColor.GREEN + "Reloaded SecondChance");
