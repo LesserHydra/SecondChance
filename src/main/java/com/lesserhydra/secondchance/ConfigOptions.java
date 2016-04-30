@@ -21,20 +21,20 @@ class ConfigOptions {
 	public final int maxPerPlayer;
 	//Only a deathpoint's owner can access it
 	public final boolean isProtected;
+	//Delay for safe location finding timer
+	public final long locationCheckDelay;
 	//Delay for particle timer
 	public final long particleDelay;
 	
-	//Primary particles (Show location to click, by default)
-	public final Particle particlePrimary;
-	public final int particlePrimaryCount;
-	public final double particlePrimarySpread;
-	public final double particlePrimarySpeed;
+	//Message that plays on death
+	public final DeathpointMessage deathMessage;
+	//Message that plays on forget
+	public final DeathpointMessage forgetMessage;
 	
+	//Primary particles (Show location to click, by default)
+	public final ParticleEffect particlePrimary;
 	//Secondary particles (Show proximity, by default)
-	public final Particle particleSecondary;
-	public final int particleSecondaryCount;
-	public final double particleSecondarySpread;
-	public final double particleSecondarySpeed;
+	public final ParticleEffect particleSecondary;
 	
 	//Sound on creation
 	public final boolean creationSoundEnabled;
@@ -71,25 +71,40 @@ class ConfigOptions {
 		this.holdExp = config.getBoolean("Hold Experience", true);
 		this.dropItemsOnForget = config.getBoolean("Drop Items When Forgotten", true);
 		this.dropExpOnForget = config.getBoolean("Drop Experience When Forgotten", false);
-		this.breakOnHit = config.getBoolean("Break Deathpoint On Leftclick", true);
+		this.breakOnHit = config.getBoolean("Break Deathpoint On Leftclick", false);
 		this.maxPerPlayer = config.getInt("Player Deathpoint Maximum", 1);
 		this.isProtected = config.getBoolean("Owner Based", true);
+		this.locationCheckDelay = config.getLong("Safe Location Timer Delay", 40);
 		this.particleDelay = config.getLong("Particle Timer Delay", 20);
 		
-		this.particlePrimary = getEnum("Primary Particles.Type", Particle.PORTAL, config);
-		this.particlePrimaryCount = config.getInt("Primary Particles.Count", 50);
-		this.particlePrimarySpread = config.getDouble("Primary Particles.Spread", 0.2);
-		this.particlePrimarySpeed = config.getDouble("Primary Particles.Speed", 0.5);
+		this.deathMessage = new DeathpointMessage(config.getString("Death Message", ""));
+		this.forgetMessage = new DeathpointMessage(config.getString("Forget Message", ""));
 		
-		this.particleSecondary = getEnum("Secondary Particles.Type", Particle.END_ROD, config);
-		this.particleSecondaryCount = config.getInt("Secondary Particles.Count", 15);
-		this.particleSecondarySpread = config.getDouble("Secondary Particles.Spread", 10);
-		this.particleSecondarySpeed = config.getDouble("Secondary Particles.Speed", 0.1);
+		Particle particlePrimaryType = getEnum("Primary Particles.Type", Particle.PORTAL, config);
+		int particlePrimaryCount = config.getInt("Primary Particles.Count", 50);
+		double particlePrimarySpread = config.getDouble("Primary Particles.Spread", 0.2);
+		double particlePrimarySpeed = config.getDouble("Primary Particles.Speed", 0.5);
+		boolean particlePrimaryOwner = config.getBoolean("Primary Particles.Owner Only", false);
+		this.particlePrimary = new ParticleEffect(particlePrimaryType, particlePrimaryCount, particlePrimarySpread,
+				particlePrimarySpeed, particlePrimaryOwner);
+		
+		Particle particleSecondaryType = getEnum("Secondary Particles.Type", Particle.END_ROD, config);
+		int particleSecondaryCount = config.getInt("Secondary Particles.Count", 15);
+		double particleSecondarySpread = config.getDouble("Secondary Particles.Spread", 10);
+		double particleSecondarySpeed = config.getDouble("Secondary Particles.Speed", 0.1);
+		boolean particleSecondaryOwner = config.getBoolean("Secondary Particles.Owner Only", true);
+		this.particleSecondary = new ParticleEffect(particleSecondaryType, particleSecondaryCount, particleSecondarySpread,
+				particleSecondarySpeed, particleSecondaryOwner);
 		
 		this.creationSoundEnabled = config.getBoolean("Play Sound on Deathpoint Created.Enabled", true);
 		this.creationSound = config.getString("Play Sound on Deathpoint Created.Sound", "ui.button.click");
 		this.creationSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Created.Volume", 1);
 		this.creationSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Created.Pitch", 1);
+		
+		this.forgetSoundEnabled = config.getBoolean("Play Sound on Deathpoint Forgotten.Enabled", true);
+		this.forgetSound = config.getString("Play Sound on Deathpoint Forgotten.Sound", "ui.button.click");
+		this.forgetSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Forgotten.Volume", 1);
+		this.forgetSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Forgotten.Pitch", 1);
 		
 		this.openSoundEnabled = config.getBoolean("Play Sound on Deathpoint Opened.Enabled", true);
 		this.openSound = config.getString("Play Sound on Deathpoint Opened.Sound", "ui.button.click");
@@ -105,11 +120,6 @@ class ConfigOptions {
 		this.breakSound = config.getString("Play Sound on Deathpoint Broken.Sound", "ui.button.click");
 		this.breakSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Broken.Volume", 1);
 		this.breakSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Broken.Pitch", 1);
-		
-		this.forgetSoundEnabled = config.getBoolean("Play Sound on Deathpoint Forgotten.Enabled", true);
-		this.forgetSound = config.getString("Play Sound on Deathpoint Forgotten.Sound", "ui.button.click");
-		this.forgetSoundVolume = (float) config.getDouble("Play Sound on Deathpoint Forgotten.Volume", 1);
-		this.forgetSoundPitch = (float) config.getDouble("Play Sound on Deathpoint Forgotten.Pitch", 1);
 	}
 	
 	private static <T extends Enum<T>> T getEnum(String path, T def, FileConfiguration config) {

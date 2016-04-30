@@ -1,9 +1,14 @@
-##############################
-# SecondChance Configuration #
-##############################
-
 #Allows conversion to newer versions. Do not change!
 Config version: 1
+
+
+#######################
+# Basic Configuration #
+#######################
+
+#Delay for timer that looks for "safe" locations to spawn a player's deathpoint at
+#Default: 40
+Safe Location Timer Delay: 40
 
 #Whether deathpoints should hold items on death
 #Default: true
@@ -23,6 +28,11 @@ Drop Items When Forgotten: true
 #Default: false
 Drop Experience When Forgotten: false
 
+#Whether or not a deathpoint should break when punched, acting as if it was
+#opened and then closed
+#Default: false
+Break Deathpoint On Leftclick: false
+
 #Maximum number of deathpoints allowed per player, before the oldest is
 #forgotten (-1 disables)
 #Default: 1
@@ -32,6 +42,30 @@ Player Deathpoint Maximum: 1
 #Default: true
 Owner Based: true
 
+
+############
+# Messages #
+############
+
+#Color codes are supported: http://wiki.ess3.net/mc/
+#Linebreaks (\n) and YAML multiline strings are supported
+#<name> is the name of the player the message is being sent to
+#<x>, <y>, and <z> are the corresponding location values of the deathpoint
+#Example: "<name>, deathpoint spawned at (<x>, <y>, <z>)\nThis is a &9new line"
+
+#Message that is send to a player on death
+#Default: "&dA memory forms in the back of your mind."
+Death Message: "&dA memory forms in the back of your mind."
+
+#Message that is sent to a player when a deathpoint is not retrieved
+#Default: "&cYou feel something slipping away..."
+Forget Message: "&cYou feel something slipping away..."
+
+
+#############
+# Particles #
+#############
+
 #Delay for particle timer
 #Default: 20
 Particle Timer Delay: 20
@@ -39,6 +73,7 @@ Particle Timer Delay: 20
 #Primary particles (Show location to click, by default)
 Primary Particles:
   #Particle type enum; Must be a valid particle type!
+  #https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Particle.html
   #Default: PORTAL
   Type: PORTAL
   #Number of particles
@@ -50,10 +85,14 @@ Primary Particles:
   #Particle speed
   #Default: 0.5
   Speed: 0.5
+  #Whether these particles should only be sent to the owner of the deathpoint
+  #Default: false
+  Owner Only: false
 
 #Secondary particles (Show proximity, by default)
 Secondary Particles:
   #Particle type enum; Must be a valid particle type!
+  #https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Particle.html
   #Default: END_ROD
   Type: END_ROD
   #Number of particles
@@ -65,6 +104,9 @@ Secondary Particles:
   #Particle speed
   #Default: 0.1
   Speed: 0.1
+  #Whether these particles should only be sent to the owner of the deathpoint
+  #Default: true
+  Owner Only: true
 
 
 ##########
@@ -89,6 +131,21 @@ Play Sound on Deathpoint Created:
   #Pitch (See /playsound link above)
   #Default: 1.0
   Pitch: 1.0
+
+#Sound that plays when a deathpoint is forgotten
+Play Sound on Deathpoint Forgotten:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: entity.shulker_bullet.hit
+  Sound: entity.shulker_bullet.hit
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 0.5
 
 #Sound that plays when a deathpoint's inventory is opened
 Play Sound on Deathpoint Opened:
@@ -128,21 +185,6 @@ Play Sound on Deathpoint Broken:
   #http://minecraft.gamepedia.com/Sounds.json#Sound_events
   #Default: entity.item.pickup
   Sound: entity.item.pickup
-  #Volume (See /playsound link above)
-  #Default: 1.0
-  Volume: 1.0
-  #Pitch (See /playsound link above)
-  #Default: 1.0
-  Pitch: 0.5
-
-#Sound that plays when a deathpoint is forgotten
-Play Sound on Deathpoint Forgotten:
-  #Default: true
-  Enabled: true
-  #Sound to play; works with resource packs
-  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
-  #Default: entity.shulker_bullet.hit
-  Sound: entity.shulker_bullet.hit
   #Volume (See /playsound link above)
   #Default: 1.0
   Volume: 1.0
