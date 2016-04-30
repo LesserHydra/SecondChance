@@ -122,6 +122,7 @@ class DeathpointHandler implements Listener {
 		//Create if not empty
 		if (itemsToHold == null && exp == 0) return;
 		Deathpoint newPoint = new Deathpoint(player, location, itemsToHold, exp);
+		options.deathMessage.sendMessage(player, newPoint);
 		newPoint.spawnHitbox();
 		deathpoints.get(location.getWorld().getName()).add(newPoint);
 		plugin.getSaveHandler(location.getWorld()).put(newPoint);
@@ -245,12 +246,9 @@ class DeathpointHandler implements Listener {
 		Location location = deathpoint.getLocation();
 		if (!location.getChunk().isLoaded()) return;
 		
-		location.getWorld().spawnParticle(options.particlePrimary, location, options.particlePrimaryCount,
-				options.particlePrimarySpread, options.particlePrimarySpread, options.particlePrimarySpread,
-				options.particlePrimarySpeed);
-		location.getWorld().spawnParticle(options.particleSecondary, location, options.particleSecondaryCount,
-				options.particleSecondarySpread, options.particleSecondarySpread, options.particleSecondarySpread,
-				options.particleSecondarySpeed);
+		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
+		options.particlePrimary.run(location, owner);
+		options.particleSecondary.run(location, owner);
 	}
 	
 	private void destroyOldDeathpoints(Player player) {
@@ -267,6 +265,7 @@ class DeathpointHandler implements Listener {
 			if (options.dropExpOnForget) deathpoint.dropExperience();
 			deathpoint.destroy();
 			remove(deathpoint);
+			options.forgetMessage.sendMessage(player, deathpoint);
 		}
 	}
 	

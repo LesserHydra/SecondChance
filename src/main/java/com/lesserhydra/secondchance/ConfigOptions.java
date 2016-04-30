@@ -26,17 +26,15 @@ class ConfigOptions {
 	//Delay for particle timer
 	public final long particleDelay;
 	
-	//Primary particles (Show location to click, by default)
-	public final Particle particlePrimary;
-	public final int particlePrimaryCount;
-	public final double particlePrimarySpread;
-	public final double particlePrimarySpeed;
+	//Message that plays on death
+	public final DeathpointMessage deathMessage;
+	//Message that plays on forget
+	public final DeathpointMessage forgetMessage;
 	
+	//Primary particles (Show location to click, by default)
+	public final ParticleEffect particlePrimary;
 	//Secondary particles (Show proximity, by default)
-	public final Particle particleSecondary;
-	public final int particleSecondaryCount;
-	public final double particleSecondarySpread;
-	public final double particleSecondarySpeed;
+	public final ParticleEffect particleSecondary;
 	
 	
 	public ConfigOptions(FileConfiguration config) {
@@ -50,15 +48,24 @@ class ConfigOptions {
 		this.locationCheckDelay = config.getLong("Safe Location Timer Delay", 40);
 		this.particleDelay = config.getLong("Particle Timer Delay", 20);
 		
-		this.particlePrimary = getEnum("Primary Particles.Type", Particle.PORTAL, config);
-		this.particlePrimaryCount = config.getInt("Primary Particles.Count", 50);
-		this.particlePrimarySpread = config.getDouble("Primary Particles.Spread", 0.2);
-		this.particlePrimarySpeed = config.getDouble("Primary Particles.Speed", 0.5);
+		this.deathMessage = new DeathpointMessage(config.getString("Death Message", ""));
+		this.forgetMessage = new DeathpointMessage(config.getString("Forget Message", ""));
 		
-		this.particleSecondary = getEnum("Secondary Particles.Type", Particle.END_ROD, config);
-		this.particleSecondaryCount = config.getInt("Secondary Particles.Count", 15);
-		this.particleSecondarySpread = config.getDouble("Secondary Particles.Spread", 10);
-		this.particleSecondarySpeed = config.getDouble("Secondary Particles.Speed", 0.1);
+		Particle particlePrimaryType = getEnum("Primary Particles.Type", Particle.PORTAL, config);
+		int particlePrimaryCount = config.getInt("Primary Particles.Count", 50);
+		double particlePrimarySpread = config.getDouble("Primary Particles.Spread", 0.2);
+		double particlePrimarySpeed = config.getDouble("Primary Particles.Speed", 0.5);
+		boolean particlePrimaryOwner = config.getBoolean("Primary Particles.Owner Only", false);
+		this.particlePrimary = new ParticleEffect(particlePrimaryType, particlePrimaryCount, particlePrimarySpread,
+				particlePrimarySpeed, particlePrimaryOwner);
+		
+		Particle particleSecondaryType = getEnum("Secondary Particles.Type", Particle.END_ROD, config);
+		int particleSecondaryCount = config.getInt("Secondary Particles.Count", 15);
+		double particleSecondarySpread = config.getDouble("Secondary Particles.Spread", 10);
+		double particleSecondarySpeed = config.getDouble("Secondary Particles.Speed", 0.1);
+		boolean particleSecondaryOwner = config.getBoolean("Secondary Particles.Owner Only", true);
+		this.particleSecondary = new ParticleEffect(particleSecondaryType, particleSecondaryCount, particleSecondarySpread,
+				particleSecondarySpeed, particleSecondaryOwner);
 	}
 	
 	private static <T extends Enum<T>> T getEnum(String path, T def, FileConfiguration config) {

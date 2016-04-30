@@ -43,6 +43,25 @@ Player Deathpoint Maximum: 1
 Owner Based: true
 
 
+############
+# Messages #
+############
+
+#Color codes are supported: http://wiki.ess3.net/mc/
+#Linebreaks (\n) and YAML multiline strings are supported
+#<name> is the name of the player the message is being sent to
+#<x>, <y>, and <z> are the corresponding location values of the deathpoint
+#Example: "<name>, deathpoint spawned at (<x>, <y>, <z>)\nThis is a &9new line"
+
+#Message that is send to a player on death
+#Default: "&dA memory forms in the back of your mind."
+Death Message: "&dA memory forms in the back of your mind."
+
+#Message that is sent to a player when a deathpoint is not retrieved
+#Default: "&cYou feel something slipping away..."
+Forget Message: "&cYou feel something slipping away..."
+
+
 #############
 # Particles #
 #############
@@ -66,6 +85,9 @@ Primary Particles:
   #Particle speed
   #Default: 0.5
   Speed: 0.5
+  #Whether these particles should only be sent to the owner of the deathpoint
+  #Default: false
+  Owner Only: false
 
 #Secondary particles (Show proximity, by default)
 Secondary Particles:
@@ -82,3 +104,6 @@ Secondary Particles:
   #Particle speed
   #Default: 0.1
   Speed: 0.1
+  #Whether these particles should only be sent to the owner of the deathpoint
+  #Default: true
+  Owner Only: true
