@@ -182,7 +182,7 @@ class DeathpointHandler implements Listener {
 		deathpoint.dropItems();
 		deathpoint.dropExperience();
 		deathpoint.destroy();
-		remove(deathpoint);	
+		remove(deathpoint);
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -247,6 +247,9 @@ class DeathpointHandler implements Listener {
 		
 		//Start particle timer for world
 		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
+		
+		//Start ambient sound timer for world
+		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runAmbientSound), 0, options.ambientSoundDelay);
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {
@@ -256,6 +259,14 @@ class DeathpointHandler implements Listener {
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		options.particlePrimary.run(location, owner);
 		options.particleSecondary.run(location, owner);
+	}
+	
+	private void runAmbientSound(Deathpoint deathpoint) {
+		Location location = deathpoint.getLocation();
+		if (!location.getChunk().isLoaded()) return;
+		
+		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
+		options.ambientSound.run(location, owner);
 	}
 	
 	private void destroyOldDeathpoints(Player player) {

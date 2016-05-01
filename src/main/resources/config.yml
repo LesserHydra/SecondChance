@@ -118,6 +118,28 @@ Secondary Particles:
 #http://minecraft.gamepedia.com/Commands#playsound
 #Note that invalid sounds will fail silently (pun not intended)
 
+#Delay for the timer that plays the ambient sound
+#Default: 50
+Ambient Sound Delay: 50
+
+#Sound that plays on a timer near deathpoints
+Play Ambient Sound:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: entity.item.pickup
+  Sound: item.elytra.flying
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 0.1
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 2
+  #Whether the sound should play directly on top of the player
+  #Default: false
+  Direct: false
+
 #Sound that plays when a deathpoint is created
 Play Sound on Deathpoint Created:
   #Default: true
@@ -146,7 +168,7 @@ Play Sound on Deathpoint Forgotten:
   Sound: entity.lightning.thunder
   #Volume (See /playsound link above)
   #Default: 1.0
-  Volume: 1.0
+  Volume: 0.75
   #Pitch (See /playsound link above)
   #Default: 1.0
   Pitch: 2.0

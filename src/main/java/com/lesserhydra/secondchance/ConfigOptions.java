@@ -23,6 +23,8 @@ class ConfigOptions {
 	public final ParticleEffect particlePrimary;
 	public final ParticleEffect particleSecondary;
 	
+	public final long ambientSoundDelay;
+	public final SoundEffect ambientSound;
 	public final SoundEffect creationSound;
 	public final SoundEffect openSound;
 	public final SoundEffect closeSound;
@@ -46,11 +48,13 @@ class ConfigOptions {
 		this.particlePrimary = getParticleEffect("Primary Particles", new ParticleEffect(Particle.PORTAL, 50, 0.2, 0.5, false), config);
 		this.particleSecondary = getParticleEffect("Secondary Particles", new ParticleEffect(Particle.END_ROD, 15, 10, 0.1, true), config);
 		
-		this.creationSound = getSoundEffect("Play Sound on Deathpoint Created", new SoundEffect(false, "ui.button.click", 1, 1, false), config);
-		this.forgetSound = getSoundEffect("Play Sound on Deathpoint Forgotten", new SoundEffect(false, "ui.button.click", 1, 1, false), config);
-		this.openSound = getSoundEffect("Play Sound on Deathpoint Opened", new SoundEffect(false, "ui.button.click", 1, 1, false), config);
-		this.closeSound = getSoundEffect("Play Sound on Deathpoint Closed", new SoundEffect(false, "ui.button.click", 1, 1, false), config);
-		this.breakSound = getSoundEffect("Play Sound on Deathpoint Broken", new SoundEffect(false, "ui.button.click", 1, 1, false), config);
+		this.ambientSoundDelay = config.getLong("Ambient Sound Delay", 50);
+		this.ambientSound = getSoundEffect("Play Ambient Sound", new SoundEffect(true, "item.elytra.flying", 0.1f, 2.0f, false), config);
+		this.creationSound = getSoundEffect("Play Sound on Deathpoint Created", new SoundEffect(true, "entity.zombie_villager.converted", 1.0f, 2.0f, true), config);
+		this.forgetSound = getSoundEffect("Play Sound on Deathpoint Forgotten", new SoundEffect(false, "entity.lightning.thunder", 0.75f, 2.0f, true), config);
+		this.openSound = getSoundEffect("Play Sound on Deathpoint Opened", new SoundEffect(false, "ui.button.click", 1.0f, 1.0f, false), config);
+		this.closeSound = getSoundEffect("Play Sound on Deathpoint Closed", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
+		this.breakSound = getSoundEffect("Play Sound on Deathpoint Broken", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
 	}
 	
 	private static ParticleEffect getParticleEffect(String path, ParticleEffect def, FileConfiguration config) {

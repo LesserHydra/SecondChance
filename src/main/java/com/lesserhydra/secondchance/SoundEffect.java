@@ -30,6 +30,7 @@ public class SoundEffect {
 	}
 	
 	private void playDirect(Player player) {
+		if (player == null) return;
 		player.playSound(player.getLocation(), sound, volume, pitch);
 	}
 
