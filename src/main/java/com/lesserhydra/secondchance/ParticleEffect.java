@@ -33,5 +33,25 @@ public class ParticleEffect {
 		if (owner == null) return;
 		owner.spawnParticle(type, location, amount, spread, spread, spread, speed);
 	}
-	
+
+	public Particle getType() {
+		return type;
+	}
+
+	public int getAmount() {
+		return amount;
+	}
+
+	public double getSpread() {
+		return spread;
+	}
+
+	public double getSpeed() {
+		return speed;
+	}
+
+	public boolean isOwnerOnly() {
+		return ownerOnly;
+	}
+
 }

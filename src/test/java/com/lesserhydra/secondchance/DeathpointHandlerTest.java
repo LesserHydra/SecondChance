@@ -149,6 +149,7 @@ public class DeathpointHandlerTest {
 		
 		//Player
 		Player mockPlayer = mock(Player.class);
+		when(mockPlayer.getName()).thenReturn("TestPlayer1");
 		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
 		when(mockPlayer.getWorld()).thenReturn(mockWorld);
 		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(mockPlugin, new Location(mockWorld, 10, 60, -10))));

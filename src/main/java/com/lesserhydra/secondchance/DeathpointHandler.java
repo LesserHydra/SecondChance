@@ -121,8 +121,8 @@ class DeathpointHandler implements Listener {
 		
 		//Create if not empty
 		if (itemsToHold == null && exp == 0) return;
-		if (options.creationSoundEnabled) location.getWorld().playSound(location, options.creationSound, options.creationSoundVolume, options.creationSoundPitch);
 		Deathpoint newPoint = new Deathpoint(player, location, itemsToHold, exp);
+		options.creationSound.run(location, player);
 		options.deathMessage.sendMessage(player, newPoint);
 		newPoint.spawnHitbox();
 		deathpoints.get(location.getWorld().getName()).add(newPoint);
@@ -178,7 +178,7 @@ class DeathpointHandler implements Listener {
 		Player punched = (Player) event.getDamager();
 		
 		if (options.isProtected && !punched.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
-		if (options.breakSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.breakSound, options.breakSoundVolume, options.breakSoundPitch);
+		options.breakSound.run(deathpoint.getLocation(), punched);
 		deathpoint.dropItems();
 		deathpoint.dropExperience();
 		deathpoint.destroy();
@@ -202,12 +202,12 @@ class DeathpointHandler implements Listener {
 		
 		deathpoint.dropExperience();
 		if (deathpoint.isEmpty()) {
-			if (options.closeSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.closeSound, options.closeSoundVolume, options.closeSoundPitch);
+			options.closeSound.run(deathpoint.getLocation(), player);
 			deathpoint.destroy();
 			remove(deathpoint);
 		}
 		else {
-			if (options.openSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.openSound, options.openSoundVolume, options.openSoundPitch);
+			options.openSound.run(deathpoint.getLocation(), player);
 			player.openInventory(deathpoint.getInventory());
 		}
 	}
@@ -219,7 +219,7 @@ class DeathpointHandler implements Listener {
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
 		if (deathpoint.isInvalid()) return;
-		if (options.closeSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.closeSound, options.closeSoundVolume, options.closeSoundPitch);
+		if (event.getPlayer() instanceof Player) options.closeSound.run(deathpoint.getLocation(), (Player) event.getPlayer());
 		deathpoint.dropItems();
 		deathpoint.destroy();
 		remove(deathpoint);
@@ -268,12 +268,12 @@ class DeathpointHandler implements Listener {
 		
 		while (playerDeathpoints.size() >= options.maxPerPlayer) {
 			Deathpoint deathpoint = playerDeathpoints.remove();
-			if (options.forgetSoundEnabled) deathpoint.getWorld().playSound(deathpoint.getLocation(), options.forgetSound, options.forgetSoundVolume, options.forgetSoundPitch);
+			options.forgetSound.run(deathpoint.getLocation(), player);
+			options.forgetMessage.sendMessage(player, deathpoint);
 			if (options.dropItemsOnForget) deathpoint.dropItems();
 			if (options.dropExpOnForget) deathpoint.dropExperience();
 			deathpoint.destroy();
 			remove(deathpoint);
-			options.forgetMessage.sendMessage(player, deathpoint);
 		}
 	}
 	
