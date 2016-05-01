@@ -7,35 +7,29 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 class ConfigOptions {
 	
-	//Items are held on death
 	public final boolean holdItems;
-	//Exp is held on death
 	public final boolean holdExp;
-	//Items are dropped when point not retrieved; otherwise items are lost
 	public final boolean dropItemsOnForget;
-	//Exp is dropped when point not retrieved; otherwise exp is lost
 	public final boolean dropExpOnForget;
-	//Break when valid player left clicks
 	public final boolean breakOnHit;
-	//Maximum number of deathpoints per player, before the oldest are lost (-1 disables)
 	public final int maxPerPlayer;
-	//Only a deathpoint's owner can access it
 	public final boolean isProtected;
-	//Delay for safe location finding timer
 	public final long locationCheckDelay;
-	//Delay for particle timer
 	public final long particleDelay;
 	
-	//Message that plays on death
 	public final DeathpointMessage deathMessage;
-	//Message that plays on forget
 	public final DeathpointMessage forgetMessage;
 	
-	//Primary particles (Show location to click, by default)
 	public final ParticleEffect particlePrimary;
-	//Secondary particles (Show proximity, by default)
 	public final ParticleEffect particleSecondary;
 	
+	public final long ambientSoundDelay;
+	public final SoundEffect ambientSound;
+	public final SoundEffect creationSound;
+	public final SoundEffect openSound;
+	public final SoundEffect closeSound;
+	public final SoundEffect breakSound;
+	public final SoundEffect forgetSound;
 	
 	public ConfigOptions(FileConfiguration config) {
 		this.holdItems = config.getBoolean("Hold Items", true);
@@ -48,24 +42,37 @@ class ConfigOptions {
 		this.locationCheckDelay = config.getLong("Safe Location Timer Delay", 40);
 		this.particleDelay = config.getLong("Particle Timer Delay", 20);
 		
-		this.deathMessage = new DeathpointMessage(config.getString("Death Message", ""));
-		this.forgetMessage = new DeathpointMessage(config.getString("Forget Message", ""));
+		this.deathMessage = new DeathpointMessage(config.getString("Death Message", "&dA memory forms in the back of your mind."));
+		this.forgetMessage = new DeathpointMessage(config.getString("Forget Message", "&cYou feel something slipping away..."));
 		
-		Particle particlePrimaryType = getEnum("Primary Particles.Type", Particle.PORTAL, config);
-		int particlePrimaryCount = config.getInt("Primary Particles.Count", 50);
-		double particlePrimarySpread = config.getDouble("Primary Particles.Spread", 0.2);
-		double particlePrimarySpeed = config.getDouble("Primary Particles.Speed", 0.5);
-		boolean particlePrimaryOwner = config.getBoolean("Primary Particles.Owner Only", false);
-		this.particlePrimary = new ParticleEffect(particlePrimaryType, particlePrimaryCount, particlePrimarySpread,
-				particlePrimarySpeed, particlePrimaryOwner);
+		this.particlePrimary = getParticleEffect("Primary Particles", new ParticleEffect(Particle.PORTAL, 50, 0.2, 0.5, false), config);
+		this.particleSecondary = getParticleEffect("Secondary Particles", new ParticleEffect(Particle.END_ROD, 15, 10, 0.1, true), config);
 		
-		Particle particleSecondaryType = getEnum("Secondary Particles.Type", Particle.END_ROD, config);
-		int particleSecondaryCount = config.getInt("Secondary Particles.Count", 15);
-		double particleSecondarySpread = config.getDouble("Secondary Particles.Spread", 10);
-		double particleSecondarySpeed = config.getDouble("Secondary Particles.Speed", 0.1);
-		boolean particleSecondaryOwner = config.getBoolean("Secondary Particles.Owner Only", true);
-		this.particleSecondary = new ParticleEffect(particleSecondaryType, particleSecondaryCount, particleSecondarySpread,
-				particleSecondarySpeed, particleSecondaryOwner);
+		this.ambientSoundDelay = config.getLong("Ambient Sound Delay", 50);
+		this.ambientSound = getSoundEffect("Play Ambient Sound", new SoundEffect(true, "item.elytra.flying", 0.1f, 2.0f, false), config);
+		this.creationSound = getSoundEffect("Play Sound on Deathpoint Created", new SoundEffect(true, "entity.zombie_villager.converted", 1.0f, 2.0f, true), config);
+		this.forgetSound = getSoundEffect("Play Sound on Deathpoint Forgotten", new SoundEffect(false, "entity.lightning.thunder", 0.75f, 2.0f, true), config);
+		this.openSound = getSoundEffect("Play Sound on Deathpoint Opened", new SoundEffect(false, "ui.button.click", 1.0f, 1.0f, false), config);
+		this.closeSound = getSoundEffect("Play Sound on Deathpoint Closed", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
+		this.breakSound = getSoundEffect("Play Sound on Deathpoint Broken", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
+	}
+	
+	private static ParticleEffect getParticleEffect(String path, ParticleEffect def, FileConfiguration config) {
+		Particle type = getEnum(path + ".Type", def.getType(), config);
+		int count = config.getInt(path + ".Count", def.getAmount());
+		double spread = config.getDouble(path + ".Spread", def.getSpread());
+		double speed = config.getDouble(path + ".Speed", def.getSpeed());
+		boolean ownerOnly = config.getBoolean(path + ".Owner Only", def.isOwnerOnly());
+		return new ParticleEffect(type, count, spread, speed, ownerOnly);
+	}
+	
+	private static SoundEffect getSoundEffect(String path, SoundEffect def, FileConfiguration config) {
+		boolean enabled = config.getBoolean(path + ".Enabled", def.isEnabled());
+		String sound = config.getString(path + ".Sound", def.getSound());
+		float volume = (float) config.getDouble(path + ".Volume", def.getVolume());
+		float pitch = (float) config.getDouble(path + ".Pitch", def.getPitch());
+		boolean direct = config.getBoolean(path + ".Direct", def.isDirect());
+		return new SoundEffect(enabled, sound, volume, pitch, direct);
 	}
 	
 	private static <T extends Enum<T>> T getEnum(String path, T def, FileConfiguration config) {

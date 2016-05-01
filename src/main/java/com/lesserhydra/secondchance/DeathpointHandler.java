@@ -122,6 +122,7 @@ class DeathpointHandler implements Listener {
 		//Create if not empty
 		if (itemsToHold == null && exp == 0) return;
 		Deathpoint newPoint = new Deathpoint(player, location, itemsToHold, exp);
+		options.creationSound.run(location, player);
 		options.deathMessage.sendMessage(player, newPoint);
 		newPoint.spawnHitbox();
 		deathpoints.get(location.getWorld().getName()).add(newPoint);
@@ -177,10 +178,11 @@ class DeathpointHandler implements Listener {
 		Player punched = (Player) event.getDamager();
 		
 		if (options.isProtected && !punched.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		options.breakSound.run(deathpoint.getLocation(), punched);
 		deathpoint.dropItems();
 		deathpoint.dropExperience();
 		deathpoint.destroy();
-		remove(deathpoint);	
+		remove(deathpoint);
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -200,10 +202,14 @@ class DeathpointHandler implements Listener {
 		
 		deathpoint.dropExperience();
 		if (deathpoint.isEmpty()) {
+			options.closeSound.run(deathpoint.getLocation(), player);
 			deathpoint.destroy();
 			remove(deathpoint);
 		}
-		else player.openInventory(deathpoint.getInventory());
+		else {
+			options.openSound.run(deathpoint.getLocation(), player);
+			player.openInventory(deathpoint.getInventory());
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR)
@@ -213,6 +219,7 @@ class DeathpointHandler implements Listener {
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
 		if (deathpoint.isInvalid()) return;
+		if (event.getPlayer() instanceof Player) options.closeSound.run(deathpoint.getLocation(), (Player) event.getPlayer());
 		deathpoint.dropItems();
 		deathpoint.destroy();
 		remove(deathpoint);
@@ -240,6 +247,9 @@ class DeathpointHandler implements Listener {
 		
 		//Start particle timer for world
 		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
+		
+		//Start ambient sound timer for world
+		Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runAmbientSound), 0, options.ambientSoundDelay);
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {
@@ -249,6 +259,14 @@ class DeathpointHandler implements Listener {
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		options.particlePrimary.run(location, owner);
 		options.particleSecondary.run(location, owner);
+	}
+	
+	private void runAmbientSound(Deathpoint deathpoint) {
+		Location location = deathpoint.getLocation();
+		if (!location.getChunk().isLoaded()) return;
+		
+		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
+		options.ambientSound.run(location, owner);
 	}
 	
 	private void destroyOldDeathpoints(Player player) {
@@ -261,11 +279,12 @@ class DeathpointHandler implements Listener {
 		
 		while (playerDeathpoints.size() >= options.maxPerPlayer) {
 			Deathpoint deathpoint = playerDeathpoints.remove();
+			options.forgetSound.run(deathpoint.getLocation(), player);
+			options.forgetMessage.sendMessage(player, deathpoint);
 			if (options.dropItemsOnForget) deathpoint.dropItems();
 			if (options.dropExpOnForget) deathpoint.dropExperience();
 			deathpoint.destroy();
 			remove(deathpoint);
-			options.forgetMessage.sendMessage(player, deathpoint);
 		}
 	}
 	
