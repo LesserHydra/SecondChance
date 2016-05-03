@@ -43,6 +43,26 @@ Player Deathpoint Maximum: 1
 Owner Based: true
 
 
+############
+# Messages #
+############
+
+#Leave empty to disable the message
+#Color codes are supported: http://wiki.ess3.net/mc/
+#Linebreaks (\n) and YAML multiline strings are supported
+#<name> is the name of the player the message is being sent to
+#<x>, <y>, and <z> are the corresponding location values of the deathpoint
+#Example: "<name>, deathpoint spawned at (<x>, <y>, <z>)\nThis is a &9new line"
+
+#Message that is send to a player on death, when a deathpoint is spawned
+#Default: "&dA memory forms in the back of your mind."
+Death Message: "&dA memory forms in the back of your mind."
+
+#Message that is sent to a player on death, when a deathpoint is not retrieved
+#Default: "&cYou feel something slipping away..."
+Forget Message: "&cYou feel something slipping away..."
+
+
 #############
 # Particles #
 #############
@@ -66,6 +86,9 @@ Primary Particles:
   #Particle speed
   #Default: 0.5
   Speed: 0.5
+  #Whether these particles should only be sent to the owner of the deathpoint
+  #Default: false
+  Owner Only: false
 
 #Secondary particles (Show proximity, by default)
 Secondary Particles:
@@ -82,3 +105,127 @@ Secondary Particles:
   #Particle speed
   #Default: 0.1
   Speed: 0.1
+  #Whether these particles should only be sent to the owner of the deathpoint
+  #Default: true
+  Owner Only: true
+
+
+##########
+# Sounds #
+##########
+
+#See the following for info on sound, volume, and pitch:
+#http://minecraft.gamepedia.com/Commands#playsound
+#Note that invalid sounds will fail silently (pun not intended)
+
+#Delay for the timer that plays the ambient sound
+#Default: 50
+Ambient Sound Delay: 50
+
+#Sound that plays on a timer near deathpoints
+Play Ambient Sound:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: entity.item.pickup
+  Sound: item.elytra.flying
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 0.1
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 2
+  #Whether the sound should play directly on top of the player
+  #Default: false
+  Direct: false
+
+#Sound that plays when a deathpoint is created
+Play Sound on Deathpoint Created:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: None
+  Sound: entity.zombie_villager.converted
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 2.0
+  #Whether the sound should play directly on top of the player
+  #Default: true
+  Direct: true
+
+#Sound that plays when a deathpoint is forgotten
+Play Sound on Deathpoint Forgotten:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: entity.shulker_bullet.hit
+  Sound: entity.lightning.thunder
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 0.75
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 2.0
+  #Whether the sound should play directly on top of the player
+  #Default: true
+  Direct: true
+
+#Sound that plays when a deathpoint's inventory is opened
+Play Sound on Deathpoint Opened:
+  #Default: true
+  Enabled: false
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: None
+  Sound: ui.button.click
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 1.0
+  #Whether the sound should play directly on top of the player
+  #Default: false
+  Direct: false
+
+#Sound that plays when a deathpoint's inventory is closed
+Play Sound on Deathpoint Closed:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: entity.item.pickup
+  Sound: entity.item.pickup
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 0.5
+  #Whether the sound should play directly on top of the player
+  #Default: false
+  Direct: false
+
+#Sound that plays when a deathpoint is broken (on leftclick)
+Play Sound on Deathpoint Broken:
+  #Default: true
+  Enabled: true
+  #Sound to play; works with resource packs
+  #http://minecraft.gamepedia.com/Sounds.json#Sound_events
+  #Default: entity.item.pickup
+  Sound: entity.item.pickup
+  #Volume (See /playsound link above)
+  #Default: 1.0
+  Volume: 1.0
+  #Pitch (See /playsound link above)
+  #Default: 1.0
+  Pitch: 0.5
+  #Whether the sound should play directly on top of the player
+  #Default: false
+  Direct: false
