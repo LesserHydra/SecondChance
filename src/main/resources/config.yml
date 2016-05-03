@@ -54,11 +54,11 @@ Owner Based: true
 #<x>, <y>, and <z> are the corresponding location values of the deathpoint
 #Example: "<name>, deathpoint spawned at (<x>, <y>, <z>)\nThis is a &9new line"
 
-#Message that is send to a player on death
+#Message that is send to a player on death, when a deathpoint is spawned
 #Default: "&dA memory forms in the back of your mind."
 Death Message: "&dA memory forms in the back of your mind."
 
-#Message that is sent to a player when a deathpoint is not retrieved
+#Message that is sent to a player on death, when a deathpoint is not retrieved
 #Default: "&cYou feel something slipping away..."
 Forget Message: "&cYou feel something slipping away..."
 
