@@ -2,8 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
+## [0.6] - 2016-05-01
+This update adds messages and sounds.
+### Added
+- Added option to make certain particle effects only show to the owner of a deathpoint
+- Added optional and highly configurable messages shown on deathpoint creation and forget
+- Added sounds
+### Changed
+- Made secondary particles only show to owner by default
+
 ## [0.5] - 2016-04-28
-This update fixes compatibility with Bukkit 1.9 and improves the check for safe locations
+This update fixes compatibility with Bukkit 1.9 and improves the check for safe locations.
 ### Added
 - Added a safety mechanism for when a hitbox armorstand persists to the world (#11)
 ### Changed
@@ -24,7 +33,7 @@ This update adds a reload command, fixes a few bugs, and teaches the plugin to p
 - Fixed NPE caused by reload (Issue #3)
 - Fixed minor inaccuracy in experience calculation
 - Stopped storing drops removed by other plugins
-### Techinical
+### Technical
 - Began building off of base Bukkit API, instead of full Spigot jar
 - Began adding unit-tests
 - Changed death event priority to HIGHEST from MONITOR
@@ -63,8 +72,9 @@ First unofficial "release"
 ### Added
 - Support for 1.9
 ### Technical
-- Rewrote just about everything everything
+- Rewrote just about everything
 
+[0.6]: https://github.com/Roboboy64/SecondChance/compare/0.5...0.6
 [0.5]: https://github.com/Roboboy64/SecondChance/compare/0.4...0.5
 [0.4]: https://github.com/Roboboy64/SecondChance/compare/0.3...0.4
 [0.3]: https://github.com/Roboboy64/SecondChance/compare/0.2.1...0.3
