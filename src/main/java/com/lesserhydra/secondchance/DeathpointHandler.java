@@ -143,6 +143,7 @@ class DeathpointHandler implements Listener {
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
 				.filter(Deathpoint::armorstandIsHitbox)
+				.peek(e -> plugin.getLogger().warning("Found residual armorstand."))
 				.forEach(Entity::remove);
 		
 		//Spawn deathpoint hitboxes
