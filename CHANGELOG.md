@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
+## [0.6.1] - 2016-05-10
+Quick bugfix update
+### Fixed
+- Fixed <y> and <z> both resolving to <x> in messages
+
 ## [0.6] - 2016-05-01
 This update adds messages and sounds.
 ### Added
@@ -74,6 +79,7 @@ First unofficial "release"
 ### Technical
 - Rewrote just about everything
 
+[0.6.1]: https://github.com/Roboboy64/SecondChance/compare/0.6...0.6.1
 [0.6]: https://github.com/Roboboy64/SecondChance/compare/0.5...0.6
 [0.5]: https://github.com/Roboboy64/SecondChance/compare/0.4...0.5
 [0.4]: https://github.com/Roboboy64/SecondChance/compare/0.3...0.4
