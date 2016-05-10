@@ -8,7 +8,7 @@ apply plugin: 'eclipse'
 import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens
 
-version = generateVersion('0.6')
+version = generateVersion('0.7')
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
 
 repositories {
