@@ -1,8 +1,9 @@
-package com.lesserhydra.secondchance;
+package com.lesserhydra.secondchance.configuration;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import com.lesserhydra.secondchance.Deathpoint;
 
 public class DeathpointMessage {
 	

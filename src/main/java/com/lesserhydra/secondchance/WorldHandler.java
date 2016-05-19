@@ -15,6 +15,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
 public class WorldHandler {
 	

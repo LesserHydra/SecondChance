@@ -10,6 +10,7 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
 public class SecondChance extends JavaPlugin {
 	

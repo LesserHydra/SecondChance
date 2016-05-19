@@ -1,11 +1,12 @@
-package com.lesserhydra.secondchance;
+package com.lesserhydra.secondchance.configuration;
 
 import java.util.EnumSet;
 import java.util.Optional;
 import org.bukkit.Particle;
 import org.bukkit.configuration.file.FileConfiguration;
+import com.lesserhydra.secondchance.SecondChance;
 
-class ConfigOptions {
+public class ConfigOptions {
 	
 	public final boolean holdItems;
 	public final boolean holdExp;

@@ -41,6 +41,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.*;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.Capsule;
 
 @RunWith(PowerMockRunner.class)

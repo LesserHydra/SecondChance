@@ -35,6 +35,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
 import com.lesserhydra.bukkitutil.ExpUtil;
 import com.lesserhydra.bukkitutil.ItemStackUtils;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
 class DeathpointHandler implements Listener {
 	
