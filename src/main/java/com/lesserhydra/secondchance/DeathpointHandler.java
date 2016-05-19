@@ -113,7 +113,9 @@ class DeathpointHandler implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
-		if (player == null) return;
+		
+		//Check permission
+		if (!player.hasPermission(SecondChance.enabledPermission)) return;
 		
 		//KeepInventory seems to override all event settings (SPIGOT-2222)
 		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
@@ -173,10 +175,13 @@ class DeathpointHandler implements Listener {
 		
 		Deathpoint deathpoint = findDeathpointFromHitbox((ArmorStand) event.getEntity());
 		if (deathpoint == null) return;
-		Player punched = (Player) event.getDamager();
+		Player player = (Player) event.getDamager();
 		
-		if (options.isProtected && !punched.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
-		options.breakSound.run(deathpoint.getLocation(), punched);
+		//Deathpoint is protected
+		if (options.isProtected && !player.hasPermission(SecondChance.thiefPermission)
+				&& !player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		
+		options.breakSound.run(deathpoint.getLocation(), player);
 		deathpoint.dropItems();
 		deathpoint.dropExperience();
 		worlds.get(deathpoint.getWorld().getUID()).destroyDeathpoint(deathpoint);
@@ -191,7 +196,10 @@ class DeathpointHandler implements Listener {
 		event.setCancelled(true);
 		
 		Player player = event.getPlayer();
-		if (options.isProtected && !player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
+		
+		//Deathpoint is protected
+		if (options.isProtected && !player.hasPermission(SecondChance.thiefPermission)
+				&& !player.getUniqueId().equals(deathpoint.getOwnerUniqueId())) return;
 		
 		deathpoint.dropExperience();
 		if (deathpoint.isEmpty()) {

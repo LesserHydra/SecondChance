@@ -3,9 +3,9 @@ package com.lesserhydra.secondchance;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -26,10 +27,9 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitTask;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +42,7 @@ import org.powermock.reflect.Whitebox;
 import com.lesserhydra.testing.Capsule;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WorldHandler.class, Bukkit.class, JavaPlugin.class})
+@PrepareForTest({Bukkit.class, JavaPlugin.class})
 @PowerMockIgnore("javax.management.*")
 public class DeathpointHandlerTest {
 	
@@ -51,13 +51,13 @@ public class DeathpointHandlerTest {
 	
 	private DeathpointHandler deathpointHandler;
 	
-	@Before public void init() throws Exception {
+	@Before public void init() {
 		PowerMockito.mockStatic(Bukkit.class, JavaPlugin.class);
 		
 		//Scheduler and server
 		BukkitScheduler mockScheduler = mock(BukkitScheduler.class);
-		when(mockScheduler.runTaskTimer(any(Plugin.class), any(Runnable.class), anyLong(), anyLong())).thenReturn(mock(BukkitTask.class));
 		Server mockServer = mock(Server.class);
+		when(mockServer.getPluginManager()).thenReturn(new SimplePluginManager(mockServer, new SimpleCommandMap(mockServer)));
 		BDDMockito.given(Bukkit.getScheduler()).willReturn(mockScheduler);
 		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
 		//Inventory creation
@@ -65,9 +65,8 @@ public class DeathpointHandlerTest {
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
+		when(mockPlugin.getSaveHandler(any(World.class))).then(this::getMockSaveHandler);
 		BDDMockito.given(JavaPlugin.getPlugin(eq(SecondChance.class))).willReturn(mockPlugin);
-		
-		PowerMockito.whenNew(SaveHandler.class).withArguments(any(File.class), any(World.class)).then(this::getMockSaveHandler);
 		
 		//Instantiate deathpoint handler
 		deathpointHandler = new DeathpointHandler(mockPlugin);
@@ -84,8 +83,8 @@ public class DeathpointHandlerTest {
 		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 0, 0), null, 0);
 		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0);
 		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0);
-		SaveHandler saveWorld1 = getMockSaveHandler(mockWorld1);
-		SaveHandler saveWorld2 = getMockSaveHandler(mockWorld2);
+		SaveHandler saveWorld1 = mockPlugin.getSaveHandler(mockWorld1);
+		SaveHandler saveWorld2 = mockPlugin.getSaveHandler(mockWorld2);
 		saveWorld1.put(point1);
 		saveWorld1.put(point2);
 		saveWorld2.put(point3);
@@ -156,6 +155,7 @@ public class DeathpointHandlerTest {
 		when(mockPlayer.getName()).thenReturn("TestPlayer1");
 		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
 		when(mockPlayer.getWorld()).thenReturn(mockWorld);
+		when(mockPlayer.hasPermission(eq(SecondChance.enabledPermission))).thenReturn(true);
 		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(mockPlugin, new Location(mockWorld, 10, 60, -10))));
 		PlayerInventory mockInventory = mock(PlayerInventory.class);
 		when(mockPlayer.getInventory()).thenReturn(mockInventory);
@@ -172,29 +172,24 @@ public class DeathpointHandlerTest {
 		deathpointHandler.onPlayerDeath(event);
 		
 		/*----------Then----------*/
-		SaveHandler saveHandler = getMockSaveHandler(mockWorld);
-		
 		//Gold (only) should still drop
 		assertEquals(1, event.getDrops().size());
 		assertEquals(items[3], event.getDrops().get(0));
 		
 		//Should be one deathpoint
-		assertEquals(1, saveHandler.stream().count());
+		Map<String, Deque<Deathpoint>> deathpointMap = Whitebox.getInternalState(deathpointHandler, "deathpoints");
+		Deque<Deathpoint> deathpoints = deathpointMap.get(mockPlayer.getWorld().getName());
+		assertEquals(1, deathpoints.size());
 		
 		//Book and gold should not be stored
-		Deathpoint finalDeathpoint = saveHandler.stream().findFirst().get();
-		List<ItemStack> resultingContents = Arrays.asList(finalDeathpoint.getInventory().getContents());
+		List<ItemStack> resultingContents = Arrays.asList(deathpoints.peek().getInventory().getContents());
 		assertTrue(resultingContents.containsAll(Arrays.asList(items[0], items[1], items[2])));
 		assertFalse(resultingContents.contains(items[3]));
 		assertFalse(resultingContents.contains(items[4]));
 	}
 	
 	private SaveHandler getMockSaveHandler(InvocationOnMock invoke) {
-		return getMockSaveHandler(invoke.getArgumentAt(1, World.class));
-	}
-	
-	private SaveHandler getMockSaveHandler(World world) {
-		String worldName = world.getName();
+		String worldName = invoke.getArgumentAt(0, World.class).getName();
 		SaveHandler result = mockedSaves.get(worldName);
 		if (result != null) return result;
 		

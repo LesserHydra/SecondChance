@@ -6,12 +6,18 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class SecondChance extends JavaPlugin {
 	
 	private static Plugin plugin;
+
+	public static final Permission enabledPermission = new Permission("secondchance.enabled", "Allows spawning of deathpoints on death", PermissionDefault.TRUE);
+	public static final Permission thiefPermission = new Permission("secondchance.thief", "Allows access to protected deathpoints", PermissionDefault.FALSE);
+	public static final Permission commandPermission = new Permission("secondchance.maincommand", "Allows use of admin commands", PermissionDefault.OP);
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
@@ -20,6 +26,11 @@ public class SecondChance extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		plugin = this;
+		
+		//Register permissions
+		getServer().getPluginManager().addPermission(enabledPermission);
+		getServer().getPluginManager().addPermission(thiefPermission);
+		getServer().getPluginManager().addPermission(commandPermission);
 		
 		//Create config & save folder if nonexistant
 		if (!getDataFolder().exists()) getDataFolder().mkdir();
@@ -48,6 +59,13 @@ public class SecondChance extends JavaPlugin {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String lable, String[] args) {
 		if (!cmd.getName().equalsIgnoreCase("SecondChance")) return false;
+		
+		//Check permission node
+		if (!sender.hasPermission(commandPermission)) {
+			sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+			return true;
+		}
+		
 		if (args.length < 1 || !args[0].equalsIgnoreCase("reload")) return false;
 		
 		//Deinit everything
