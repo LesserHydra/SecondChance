@@ -6,7 +6,10 @@ import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,17 +48,16 @@ import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.Capsule;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WorldHandler.class, Bukkit.class, JavaPlugin.class})
+@PrepareForTest({WorldHandler.class, Bukkit.class, JavaPlugin.class, SaveHandler.class})
 @PowerMockIgnore("javax.management.*")
 public class DeathpointHandlerTest {
 	
 	private SecondChance mockPlugin;
-	private Map<String, SaveHandler> mockedSaves = new HashMap<>();
-	
+	private SaveHandler fakeSaveHandler = new FakeSaveHandler();
 	private DeathpointHandler deathpointHandler;
 	
 	@Before public void init() throws Exception {
-		PowerMockito.mockStatic(Bukkit.class, JavaPlugin.class);
+		PowerMockito.mockStatic(Bukkit.class, JavaPlugin.class, SaveHandler.class);
 		
 		//Scheduler and server
 		BukkitScheduler mockScheduler = mock(BukkitScheduler.class);
@@ -69,9 +71,8 @@ public class DeathpointHandlerTest {
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
+		when(mockPlugin.getSaveHandler()).thenReturn(fakeSaveHandler);
 		BDDMockito.given(JavaPlugin.getPlugin(eq(SecondChance.class))).willReturn(mockPlugin);
-		
-		PowerMockito.whenNew(SaveHandler.class).withArguments(any(File.class), any(World.class)).then(this::getMockSaveHandler);
 		
 		//Instantiate deathpoint handler
 		deathpointHandler = new DeathpointHandler(mockPlugin);
@@ -88,11 +89,9 @@ public class DeathpointHandlerTest {
 		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 0, 0), null, 0);
 		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0);
 		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0);
-		SaveHandler saveWorld1 = getMockSaveHandler(mockWorld1);
-		SaveHandler saveWorld2 = getMockSaveHandler(mockWorld2);
-		saveWorld1.put(point1);
-		saveWorld1.put(point2);
-		saveWorld2.put(point3);
+		
+		fakeSaveHandler.save(mockWorld1, Arrays.asList(point1, point2));
+		fakeSaveHandler.save(mockWorld2, Arrays.asList(point3));
 		
 		//When plugin is loaded (and chunks are loaded)
 		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
@@ -175,41 +174,24 @@ public class DeathpointHandlerTest {
 		PlayerDeathEvent event = new PlayerDeathEvent(mockPlayer, drops, 10, "");
 		event.setKeepInventory(false);
 		deathpointHandler.onPlayerDeath(event);
+		deathpointHandler.deinit();
 		
 		/*----------Then----------*/
-		SaveHandler saveHandler = getMockSaveHandler(mockWorld);
+		Deque<Deathpoint> resultingDeathpoints = fakeSaveHandler.load(mockWorld);
 		
 		//Gold (only) should still drop
 		assertEquals(1, event.getDrops().size());
 		assertEquals(items[3], event.getDrops().get(0));
 		
 		//Should be one deathpoint
-		assertEquals(1, saveHandler.stream().count());
+		assertEquals(1, resultingDeathpoints.size());
 		
 		//Book and gold should not be stored
-		Deathpoint finalDeathpoint = saveHandler.stream().findFirst().get();
+		Deathpoint finalDeathpoint = resultingDeathpoints.peek();
 		List<ItemStack> resultingContents = Arrays.asList(finalDeathpoint.getInventory().getContents());
 		assertTrue(resultingContents.containsAll(Arrays.asList(items[0], items[1], items[2])));
 		assertFalse(resultingContents.contains(items[3]));
 		assertFalse(resultingContents.contains(items[4]));
-	}
-	
-	private SaveHandler getMockSaveHandler(InvocationOnMock invoke) {
-		return getMockSaveHandler(invoke.getArgumentAt(1, World.class));
-	}
-	
-	private SaveHandler getMockSaveHandler(World world) {
-		String worldName = world.getName();
-		SaveHandler result = mockedSaves.get(worldName);
-		if (result != null) return result;
-		
-		result = mock(SaveHandler.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
-		doNothing().when(result).load();
-		doNothing().when(result).save();
-		Whitebox.setInternalState(result, YamlConfiguration.class, new YamlConfiguration());
-		
-		mockedSaves.put(worldName, result);
-		return result;
 	}
 	
 	private static Inventory createMockInventory(InvocationOnMock invoke) {
@@ -218,6 +200,28 @@ public class DeathpointHandlerTest {
 		doAnswer(i -> contents.set(i.getArgumentAt(0, ItemStack[].class))).when(inv).setContents(any(ItemStack[].class));
 		when(inv.getContents()).then(i -> contents.get());
 		return inv;
+	}
+	
+	private static class FakeSaveHandler extends SaveHandler {
+		
+		private Map<String, Deque<Deathpoint>> deathpoints = new HashMap<>();
+		
+		public FakeSaveHandler() {
+			super(new File(""));
+		}
+		
+		@Override
+		public Deque<Deathpoint> load(World world) {
+			Deque<Deathpoint> found = deathpoints.get(world.getName());
+			if (found == null) return new LinkedList<>();
+			return new LinkedList<>(found);
+		}
+		
+		@Override
+		public void save(World world, Collection<Deathpoint> deathpoints) {
+			this.deathpoints.put(world.getName(), new LinkedList<>(deathpoints));
+		}
+		
 	}
 	
 }

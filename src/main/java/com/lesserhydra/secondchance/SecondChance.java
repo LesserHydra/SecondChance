@@ -21,6 +21,7 @@ public class SecondChance extends JavaPlugin {
 	public static final Permission commandPermission = new Permission("secondchance.maincommand", "Allows use of admin commands", PermissionDefault.OP);
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
+	private final SaveHandler saveHandler = new SaveHandler(saveFolder);
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
 	
 	
@@ -86,8 +87,8 @@ public class SecondChance extends JavaPlugin {
 		return true;
 	}
 	
-	public File getSaveFolder() {
-		return saveFolder;
+	public SaveHandler getSaveHandler() {
+		return saveHandler;
 	}
 	
 	public static Logger logger() {

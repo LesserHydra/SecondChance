@@ -2,7 +2,6 @@ package com.lesserhydra.secondchance;
 
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.LinkedList;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.bukkit.Bukkit;
@@ -23,9 +22,7 @@ public class WorldHandler {
 	private final ConfigOptions options;
 	private final World world;
 	
-	private final SaveHandler saveHandler;
-	private final Deque<Deathpoint> worldDeathpoints = new LinkedList<>();
-	
+	private Deque<Deathpoint> worldDeathpoints;
 	private BukkitTask particleTask;
 	private BukkitTask ambientSoundTask;
 	
@@ -34,8 +31,6 @@ public class WorldHandler {
 		this.plugin = plugin;
 		this.options = options;
 		this.world = world;
-		
-		this.saveHandler = new SaveHandler(plugin.getSaveFolder(), world);
 	}
 	
 	public void init() {
@@ -46,13 +41,8 @@ public class WorldHandler {
 				.filter(Deathpoint::armorstandIsHitbox)
 				.forEach(Entity::remove);
 		
-		//Load save file
-		saveHandler.load();
-		
 		//Initiate all deathpoints in world
-		saveHandler.stream()
-				.sorted((p1, p2) -> p1.getCreationInstant().compareTo(p2.getCreationInstant()))
-				.forEachOrdered(worldDeathpoints::add);
+		this.worldDeathpoints = plugin.getSaveHandler().load(world);
 		worldDeathpoints.forEach(Deathpoint::spawnHitbox);
 		
 		//Add initial "safe" positions to all online players in world
@@ -75,21 +65,19 @@ public class WorldHandler {
 		worldDeathpoints.stream()
 				.forEach(Deathpoint::despawnHitbox);
 		//Save
-		saveHandler.save();
+		plugin.getSaveHandler().save(world, worldDeathpoints);
 		//Clear members
-		worldDeathpoints.clear();
+		worldDeathpoints = null;
 	}
 	
 	public void addDeathpoint(Deathpoint deathpoint) {
 		deathpoint.spawnHitbox();
 		worldDeathpoints.add(deathpoint);
-		saveHandler.put(deathpoint);
 	}
 	
 	public void destroyDeathpoint(Deathpoint deathpoint) {
 		deathpoint.destroy();
 		worldDeathpoints.remove(deathpoint);
-		saveHandler.remove(deathpoint);
 	}
 	
 	public void onChunkLoad(Chunk chunk) {
@@ -115,8 +103,7 @@ public class WorldHandler {
 	
 	public void onWorldSave() {
 		//Save
-		saveHandler.putAll(worldDeathpoints);
-		saveHandler.save();
+		plugin.getSaveHandler().save(world, worldDeathpoints);
 		
 		//Despawn hitboxes
 		worldDeathpoints.stream()
