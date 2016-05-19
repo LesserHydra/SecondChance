@@ -1,55 +1,27 @@
 package com.lesserhydra.secondchance;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.LinkedList;
 import org.bukkit.World;
-import org.bukkit.configuration.file.YamlConfiguration;
 
-class SaveHandler {
+/**
+ * Represents an object that handles SecondChance save data.
+ */
+interface SaveHandler {
 	
-	private static final String SAVE_SECTION = "deathpoints";
+	/**
+	 * Loads the saved deathpoints for the given world.
+	 * The resulting deque is sorted by time (oldest first), and is safe to modify.
+	 * @param world The world to load for
+	 * @return The saved deathpoints
+	 */
+	public Deque<Deathpoint> load(World world);
 	
-	private final File saveFolder;
-	
-	public SaveHandler(File saveFolder) {
-		this.saveFolder = saveFolder;
-	}
-	
-	public Deque<Deathpoint> load(World world) {
-		File file = new File(saveFolder + world.getName());
-		
-		try {
-			file.createNewFile();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		YamlConfiguration save = YamlConfiguration.loadConfiguration(file);
-		Deque<Deathpoint> results = new LinkedList<>();
-		save.getList(SAVE_SECTION, Arrays.asList()).stream()
-				.filter(obj -> (obj instanceof Deathpoint))
-				.map(point -> (Deathpoint) point)
-				.sorted()
-				.forEachOrdered(results::add);
-		return results;
-	}
-	
-	public void save(World world, Collection<Deathpoint> deathpoints) {
-		File file = new File(saveFolder + world.getName());
-		YamlConfiguration save = new YamlConfiguration();
-		save.set(SAVE_SECTION, deathpoints);
-		
-		//TODO: Handle gracefully
-		try {
-			save.save(file);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	/**
+	 * Saves the given deathpoints for the given world.
+	 * @param world The world to save for
+	 * @param deathpoints A collection of deathpoints to save
+	 */
+	public void save(World world, Collection<Deathpoint> deathpoints);
 	
 }

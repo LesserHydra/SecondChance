@@ -3,15 +3,10 @@ package com.lesserhydra.secondchance;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -53,7 +48,7 @@ import com.lesserhydra.testing.Capsule;
 public class DeathpointHandlerTest {
 	
 	private SecondChance mockPlugin;
-	private SaveHandler fakeSaveHandler = new FakeSaveHandler();
+	private SaveHandler fakeSaveHandler = new MapSaveHandler();
 	private DeathpointHandler deathpointHandler;
 	
 	@Before public void init() throws Exception {
@@ -200,28 +195,6 @@ public class DeathpointHandlerTest {
 		doAnswer(i -> contents.set(i.getArgumentAt(0, ItemStack[].class))).when(inv).setContents(any(ItemStack[].class));
 		when(inv.getContents()).then(i -> contents.get());
 		return inv;
-	}
-	
-	private static class FakeSaveHandler extends SaveHandler {
-		
-		private Map<String, Deque<Deathpoint>> deathpoints = new HashMap<>();
-		
-		public FakeSaveHandler() {
-			super(new File(""));
-		}
-		
-		@Override
-		public Deque<Deathpoint> load(World world) {
-			Deque<Deathpoint> found = deathpoints.get(world.getName());
-			if (found == null) return new LinkedList<>();
-			return new LinkedList<>(found);
-		}
-		
-		@Override
-		public void save(World world, Collection<Deathpoint> deathpoints) {
-			this.deathpoints.put(world.getName(), new LinkedList<>(deathpoints));
-		}
-		
 	}
 	
 }
