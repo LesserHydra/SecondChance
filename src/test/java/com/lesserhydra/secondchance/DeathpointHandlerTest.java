@@ -15,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.World;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -26,6 +27,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.junit.Before;
@@ -55,6 +57,7 @@ public class DeathpointHandlerTest {
 		//Scheduler and server
 		BukkitScheduler mockScheduler = mock(BukkitScheduler.class);
 		Server mockServer = mock(Server.class);
+		when(mockServer.getPluginManager()).thenReturn(new SimplePluginManager(mockServer, new SimpleCommandMap(mockServer)));
 		BDDMockito.given(Bukkit.getScheduler()).willReturn(mockScheduler);
 		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
 		//Inventory creation
@@ -152,6 +155,7 @@ public class DeathpointHandlerTest {
 		when(mockPlayer.getName()).thenReturn("TestPlayer1");
 		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
 		when(mockPlayer.getWorld()).thenReturn(mockWorld);
+		when(mockPlayer.hasPermission(eq(SecondChance.enabledPermission))).thenReturn(true);
 		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(mockPlugin, new Location(mockWorld, 10, 60, -10))));
 		PlayerInventory mockInventory = mock(PlayerInventory.class);
 		when(mockPlayer.getInventory()).thenReturn(mockInventory);
