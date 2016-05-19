@@ -1,4 +1,4 @@
-package com.lesserhydra.secondchance;
+package com.lesserhydra.secondchance.configuration;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
