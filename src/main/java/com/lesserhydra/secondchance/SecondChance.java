@@ -1,11 +1,8 @@
 package com.lesserhydra.secondchance;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
@@ -18,7 +15,6 @@ public class SecondChance extends JavaPlugin {
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
-	private final Map<String, SaveHandler> saveHandlers = new HashMap<>();
 	
 	
 	@Override
@@ -40,10 +36,8 @@ public class SecondChance extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
-		//Deinitiate handler
+		//Deinitiate everything
 		deathpointHandler.deinit();
-		//Save all files
-		saveHandlers.values().forEach(SaveHandler::save);
 		//Unregister Deathpoint serializability
 		ConfigurationSerialization.unregisterClass(Deathpoint.class);
 		
@@ -56,17 +50,15 @@ public class SecondChance extends JavaPlugin {
 		if (!cmd.getName().equalsIgnoreCase("SecondChance")) return false;
 		if (args.length < 1 || !args[0].equalsIgnoreCase("reload")) return false;
 		
-		//Unload everything
+		//Deinit everything
 		deathpointHandler.deinit();
-		saveHandlers.values().forEach(SaveHandler::save);
-		saveHandlers.clear();
 		
 		//Recheck folders and config
 		if (!getDataFolder().exists()) getDataFolder().mkdir();
 		if (!saveFolder.exists()) saveFolder.mkdir();
 		saveDefaultConfig();
 		
-		//Reload everything
+		//Reinit everything
 		reloadConfig();
 		deathpointHandler.init(new ConfigOptions(getConfig()));
 		
@@ -75,14 +67,8 @@ public class SecondChance extends JavaPlugin {
 		return true;
 	}
 	
-	public SaveHandler getSaveHandler(World world) {
-		SaveHandler result = saveHandlers.get(world.getName());
-		if (result != null) return result;
-		
-		result = new SaveHandler(saveFolder, world);
-		result.load();
-		saveHandlers.put(world.getName(), result);
-		return result;
+	public File getSaveFolder() {
+		return saveFolder;
 	}
 	
 	public static Logger logger() {
