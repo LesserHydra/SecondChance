@@ -1,29 +1,38 @@
 package com.lesserhydra.secondchance;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
 public class SecondChance extends JavaPlugin {
 	
 	private static Plugin plugin;
+
+	public static final Permission enabledPermission = new Permission("secondchance.enabled", "Allows spawning of deathpoints on death", PermissionDefault.TRUE);
+	public static final Permission thiefPermission = new Permission("secondchance.thief", "Allows access to protected deathpoints", PermissionDefault.FALSE);
+	public static final Permission commandPermission = new Permission("secondchance.maincommand", "Allows use of admin commands", PermissionDefault.OP);
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
+	private final SaveHandler saveHandler = new YAMLSaveHandler(saveFolder);
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
-	private final Map<String, SaveHandler> saveHandlers = new HashMap<>();
 	
 	
 	@Override
 	public void onEnable() {
 		plugin = this;
+		
+		//Register permissions
+		getServer().getPluginManager().addPermission(enabledPermission);
+		getServer().getPluginManager().addPermission(thiefPermission);
+		getServer().getPluginManager().addPermission(commandPermission);
 		
 		//Create config & save folder if nonexistant
 		if (!getDataFolder().exists()) getDataFolder().mkdir();
@@ -40,10 +49,8 @@ public class SecondChance extends JavaPlugin {
 	
 	@Override
 	public void onDisable() {
-		//Deinitiate handler
+		//Deinitiate everything
 		deathpointHandler.deinit();
-		//Save all files
-		saveHandlers.values().forEach(SaveHandler::save);
 		//Unregister Deathpoint serializability
 		ConfigurationSerialization.unregisterClass(Deathpoint.class);
 		
@@ -54,19 +61,24 @@ public class SecondChance extends JavaPlugin {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String lable, String[] args) {
 		if (!cmd.getName().equalsIgnoreCase("SecondChance")) return false;
+		
+		//Check permission node
+		if (!sender.hasPermission(commandPermission)) {
+			sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
+			return true;
+		}
+		
 		if (args.length < 1 || !args[0].equalsIgnoreCase("reload")) return false;
 		
-		//Unload everything
+		//Deinit everything
 		deathpointHandler.deinit();
-		saveHandlers.values().forEach(SaveHandler::save);
-		saveHandlers.clear();
 		
 		//Recheck folders and config
 		if (!getDataFolder().exists()) getDataFolder().mkdir();
 		if (!saveFolder.exists()) saveFolder.mkdir();
 		saveDefaultConfig();
 		
-		//Reload everything
+		//Reinit everything
 		reloadConfig();
 		deathpointHandler.init(new ConfigOptions(getConfig()));
 		
@@ -75,14 +87,8 @@ public class SecondChance extends JavaPlugin {
 		return true;
 	}
 	
-	public SaveHandler getSaveHandler(World world) {
-		SaveHandler result = saveHandlers.get(world.getName());
-		if (result != null) return result;
-		
-		result = new SaveHandler(saveFolder, world);
-		result.load();
-		saveHandlers.put(world.getName(), result);
-		return result;
+	public SaveHandler getSaveHandler() {
+		return saveHandler;
 	}
 	
 	public static Logger logger() {

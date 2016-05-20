@@ -26,7 +26,7 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
 /**
  * A floating "container" that holds items and experience when a player dies.
  */
-public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
+public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Comparable<Deathpoint> {
 	
 	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
@@ -201,6 +201,11 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	@Override
 	public Inventory getInventory() {
 		return inventory;
+	}
+	
+	@Override
+	public int compareTo(Deathpoint other) {
+		return creationInstant.compareTo(other.getCreationInstant());
 	}
 	
 	@Override

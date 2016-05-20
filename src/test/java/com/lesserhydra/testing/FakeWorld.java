@@ -3,6 +3,7 @@ package com.lesserhydra.testing;
 import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -15,6 +16,7 @@ import org.powermock.reflect.Whitebox;
 public abstract class FakeWorld implements World {
 	
 	private String name;
+	private UUID uuid;
 	
 	private Map<Vector, Chunk> chunkMap = new HashMap<>();
 	private Map<Vector, Block> blockMap = new HashMap<>();
@@ -22,12 +24,18 @@ public abstract class FakeWorld implements World {
 	public static World mockBukkitWorld(String worldName) {
 		World mockWorld = mock(FakeWorld.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS).stubOnly());
 		Whitebox.setInternalState(mockWorld, String.class, worldName, FakeWorld.class);
+		Whitebox.setInternalState(mockWorld, UUID.class, UUID.randomUUID(), FakeWorld.class);
 		return mockWorld;
 	}
 	
 	@Override
 	public String getName() {
 		return name;
+	}
+	
+	@Override
+	public UUID getUID() {
+		return uuid;
 	}
 	
 	@Override
