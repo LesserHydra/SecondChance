@@ -22,6 +22,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -52,7 +53,9 @@ class DeathpointHandler implements Listener {
 	
 	public void init(ConfigOptions options) {
 		this.options = options;
-		Bukkit.getWorlds().forEach(this::initWorld);
+		Bukkit.getWorlds().stream()
+				.filter(world -> !options.isWorldDisabled(world))
+				.forEach(this::initWorld);
 		safeLocationTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> Bukkit.getOnlinePlayers().forEach(this::setSafePosition), 
 				options.locationCheckDelay, options.locationCheckDelay);
 	}
@@ -70,6 +73,7 @@ class DeathpointHandler implements Listener {
 	
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onWorldLoad(WorldLoadEvent event) {
+		if (options.isWorldDisabled(event.getWorld())) return;
 		initWorld(event.getWorld());
 	}
 	
@@ -111,12 +115,19 @@ class DeathpointHandler implements Listener {
 		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
 	}
 	
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPlayerChangeWorld(PlayerChangedWorldEvent event) {
+		Player player = event.getPlayer();
+		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, player.getLocation().add(0, 1, 0)));
+	}
+	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
 		
-		//Check permission
+		//Check permission and world enabled
 		if (!player.hasPermission(SecondChance.enabledPermission)) return;
+		if (options.isWorldDisabled(player.getWorld())) return;
 		
 		//KeepInventory seems to override all event settings (SPIGOT-2222)
 		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
@@ -258,6 +269,8 @@ class DeathpointHandler implements Listener {
 	}
 	
 	private void setSafePosition(Player player) {
+		if (options.isWorldDisabled(player.getWorld())) return;
+		
 		Location safeLoc = Util.entityLocationIsSafe(player);
 		if (safeLoc == null) return;
 		player.setMetadata("lastSafePosition", new FixedMetadataValue(plugin, safeLoc));

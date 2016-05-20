@@ -1,8 +1,11 @@
 package com.lesserhydra.secondchance.configuration;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import com.lesserhydra.secondchance.SecondChance;
 
@@ -32,6 +35,9 @@ public class ConfigOptions {
 	public final SoundEffect breakSound;
 	public final SoundEffect forgetSound;
 	
+	private final boolean useWorldWhitelist;
+	private final Set<String> worldBlacklist = new HashSet<>();
+	
 	public ConfigOptions(FileConfiguration config) {
 		this.holdItems = config.getBoolean("Hold Items", true);
 		this.holdExp = config.getBoolean("Hold Experience", true);
@@ -56,6 +62,9 @@ public class ConfigOptions {
 		this.openSound = getSoundEffect("Play Sound on Deathpoint Opened", new SoundEffect(false, "ui.button.click", 1.0f, 1.0f, false), config);
 		this.closeSound = getSoundEffect("Play Sound on Deathpoint Closed", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
 		this.breakSound = getSoundEffect("Play Sound on Deathpoint Broken", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
+		
+		this.useWorldWhitelist = config.getBoolean("Use World Whitelist", false);
+		config.getStringList("World Blacklist/Whitelist").forEach(this.worldBlacklist::add);
 	}
 	
 	private static ParticleEffect getParticleEffect(String path, ParticleEffect def, FileConfiguration config) {
@@ -88,6 +97,10 @@ public class ConfigOptions {
 		SecondChance.logger().warning("There is no " + def.getDeclaringClass().getName() + " with the name \"" + configString + "\".");
 		SecondChance.logger().warning("Defaulting to " + def.name());
 		return def;
+	}
+
+	public boolean isWorldDisabled(World world) {
+		return useWorldWhitelist ^ worldBlacklist.contains(world.getName());
 	}
 
 }

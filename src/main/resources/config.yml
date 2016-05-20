@@ -43,6 +43,24 @@ Player Deathpoint Maximum: 1
 Owner Based: true
 
 
+##########
+# Worlds #
+##########
+
+#Worlds are referenced by name
+
+#Whether to use a whitelist instead of a Blacklist
+#Default: false
+Use World Whitelist: false
+
+#List of blacklisted (or whitelisted, if Use World Whitelist is set)
+#worlds that the plugin should not run in
+#Default: none
+World Blacklist/Whitelist:
+#- worldname1
+#- worldname2
+
+
 ############
 # Messages #
 ############
