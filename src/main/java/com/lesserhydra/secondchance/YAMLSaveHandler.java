@@ -29,7 +29,7 @@ class YAMLSaveHandler implements SaveHandler {
 	
 	@Override
 	public Deque<Deathpoint> load(World world) {
-		File file = new File(saveFolder + world.getName());
+		File file = new File(saveFolder + File.separator + world.getName() + ".yml");
 		
 		try {
 			file.createNewFile();
@@ -49,7 +49,7 @@ class YAMLSaveHandler implements SaveHandler {
 	
 	@Override
 	public void save(World world, Collection<Deathpoint> deathpoints) {
-		File file = new File(saveFolder + world.getName());
+		File file = new File(saveFolder + File.separator + world.getName() + ".yml");
 		YamlConfiguration save = new YamlConfiguration();
 		save.set(SAVE_SECTION, deathpoints);
 		
