@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
+## [0.7] - 2016-05-20
+This update adds permissions and a world blacklist/whitelist.
+### Added
+- Added permissions for deathpoint creation and accessing unowned deathpoints
+- Added world blacklist which can double as a whitelist
+### Fixed
+- Fixed hitboxes not despawning on word save (final hitbox bug?)
+### Technical
+- Reworked the hierarchy of "handlers"
+- Simplified save handling code
+
 ## [0.6.1] - 2016-05-10
 Quick bugfix update
 ### Fixed
@@ -79,6 +90,7 @@ First unofficial "release"
 ### Technical
 - Rewrote just about everything
 
+[0.7]: https://github.com/Roboboy64/SecondChance/compare/0.6.1...0.7
 [0.6.1]: https://github.com/Roboboy64/SecondChance/compare/0.6...0.6.1
 [0.6]: https://github.com/Roboboy64/SecondChance/compare/0.5...0.6
 [0.5]: https://github.com/Roboboy64/SecondChance/compare/0.4...0.5
