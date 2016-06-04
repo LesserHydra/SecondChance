@@ -26,7 +26,7 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
 /**
  * A floating "container" that holds items and experience when a player dies.
  */
-public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Comparable<Deathpoint> {
+public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	
 	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
@@ -37,6 +37,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	
 	private Inventory inventory;
 	private int experience;
+	private int deathsTillForget;
+	private long ticksTillForget;
 	
 	private ArmorStand hitbox;
 	private boolean invalid = false;
@@ -49,13 +51,16 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * @param items Contents of deathpoint (must fit in inventory)
 	 * @param experience Experience contained in deathpoint
 	 */
-	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience) {
+	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience, int timeToLive, long countdown) {
 		this.creationInstant = Instant.now();
 		this.ownerUniqueId = owner.getUniqueId();
 		this.location = location.clone();
 		
 		this.inventory = createInventory(items);
 		this.experience = experience;
+		
+		this.deathsTillForget = timeToLive;
+		this.ticksTillForget = countdown;
 	}
 	
 	/**
@@ -71,6 +76,14 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		this.inventory = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
 		ItemStack[] contents = ((List<?>) map.get("contents")).toArray(new ItemStack[INV_SIZE]);
 		inventory.setContents(contents);
+		
+		Object dtf = map.get("deathsTillForget");
+		if (dtf == null) dtf = 1; //Compatability for old saves
+		this.deathsTillForget = (int) dtf;
+		
+		Object ttf = map.get("ticksTillForget");
+		if (ttf == null) ttf = -1; //Compatability for old saves
+		this.ticksTillForget = (int) ttf;
 	}
 	
 	@Override
@@ -87,6 +100,9 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		}
 		result.put("contents", Arrays.copyOf(contents, i+1));
 		result.put("experience", experience);
+		
+		result.put("deathsTillForget", deathsTillForget);
+		result.put("ticksTillForget", ticksTillForget);
 
 		return result;
 	}
@@ -116,6 +132,25 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		if (hitbox == null) return;
 		hitbox.remove();
 		hitbox = null;
+	}
+	
+	/**
+	 * Updates the number of deaths till forgotten.
+	 * @return True if should be forgotten
+	 */
+	public boolean updateDeathsTillForget() {
+		deathsTillForget -= 1;
+		return (deathsTillForget < 1);
+	}
+	
+	/**
+	 * Updates the time in ticks till forgotten.
+	 * @param ticks Number of ticks to update by
+	 * @return True if should be forgotten
+	 */
+	public boolean updateTicksTillForget(long ticks) {
+		ticksTillForget -= ticks;
+		return (ticksTillForget < 1);
 	}
 	
 	/**
@@ -159,11 +194,27 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	}
 	
 	/**
-	 * Checks if this deathpoint has not been destroyed.
+	 * Checks if this deathpoint has already been destroyed.
 	 * @return True if valid
 	 */
 	public boolean isInvalid() {
 		return invalid;
+	}
+	
+	/**
+	 * Returns the number of deaths before forgotten.
+	 * @return The number of deaths before forgotten
+	 */
+	public int getTimeToLive() {
+		return deathsTillForget;
+	}
+	
+	/**
+	 * Returns the number of ticks before forgotten.
+	 * @return The number of ticks before forgotten
+	 */
+	public long getTicksToLive() {
+		return ticksTillForget;
 	}
 	
 	/**
@@ -201,11 +252,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	@Override
 	public Inventory getInventory() {
 		return inventory;
-	}
-	
-	@Override
-	public int compareTo(Deathpoint other) {
-		return creationInstant.compareTo(other.getCreationInstant());
 	}
 	
 	@Override

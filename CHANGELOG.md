@@ -16,7 +16,7 @@ This update adds permissions and a world blacklist/whitelist.
 ## [0.6.1] - 2016-05-10
 Quick bugfix update
 ### Fixed
-- Fixed <y> and <z> both resolving to <x> in messages
+- Fixed \<y\> and \<z\> both resolving to \<x\> in messages
 
 ## [0.6] - 2016-05-01
 This update adds messages and sounds.

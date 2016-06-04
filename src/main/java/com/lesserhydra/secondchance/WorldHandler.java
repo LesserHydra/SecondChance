@@ -2,6 +2,7 @@ package com.lesserhydra.secondchance;
 
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.bukkit.Bukkit;
@@ -25,6 +26,7 @@ public class WorldHandler {
 	private Deque<Deathpoint> worldDeathpoints;
 	private BukkitTask particleTask;
 	private BukkitTask ambientSoundTask;
+	private BukkitTask timeCheckTask;
 	
 	
 	public WorldHandler(SecondChance plugin, ConfigOptions options, World world) {
@@ -54,13 +56,21 @@ public class WorldHandler {
 		particleTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runParticles), 0, options.particleDelay);
 		
 		//Start ambient sound timer for world
-		ambientSoundTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runAmbientSound), 0, options.ambientSoundDelay);
+		if (options.ambientSoundDelay > 0 && options.ambientSound.isEnabled()) {
+			ambientSoundTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> worldDeathpoints.forEach(this::runAmbientSound), 0, options.ambientSoundDelay);
+		}
+		
+		//Start time check timer for world
+		if (options.timeCheckDelay > 0 && options.ticksTillForget >= 0) {
+			timeCheckTask = Bukkit.getScheduler().runTaskTimer(plugin, this::updateTicksTillForget, 0, options.timeCheckDelay);
+		}
 	}
 	
 	public void deinit() {
 		//Cancel tasks
 		particleTask.cancel();
-		ambientSoundTask.cancel();
+		if (ambientSoundTask != null) ambientSoundTask.cancel();
+		if (timeCheckTask != null) timeCheckTask.cancel();
 		//Despawn hitboxes
 		worldDeathpoints.stream()
 				.forEach(Deathpoint::despawnHitbox);
@@ -120,6 +130,36 @@ public class WorldHandler {
 	
 	public Stream<Deathpoint> deathpoints() {
 		return worldDeathpoints.stream();
+	}
+	
+	public void updateDeathsTillForget(Player player) {
+		for (Iterator<Deathpoint> it = worldDeathpoints.iterator(); it.hasNext();) {
+			Deathpoint deathpoint = it.next();
+			if (!deathpoint.getOwnerUniqueId().equals(player.getUniqueId())) continue;
+			if (deathpoint.updateDeathsTillForget()) forgetDeathpoint(deathpoint, it);
+		}
+	}
+	
+	private void updateTicksTillForget() {
+		for (Iterator<Deathpoint> it = worldDeathpoints.iterator(); it.hasNext();) {
+			Deathpoint deathpoint = it.next();
+			if (deathpoint.updateTicksTillForget(options.timeCheckDelay)) forgetDeathpoint(deathpoint, it);
+		}
+	}
+	
+	private void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
+		//Play sound and message for owner, if online
+		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
+		if (owner != null) {
+			options.forgetSound.run(deathpoint.getLocation(), owner);
+			options.forgetMessage.sendMessage(owner, deathpoint);
+		}
+		
+		//Forget deathpoint
+		if (options.dropItemsOnForget) deathpoint.dropItems();
+		if (options.dropExpOnForget) deathpoint.dropExperience();
+		deathpoint.destroy();
+		it.remove();
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {

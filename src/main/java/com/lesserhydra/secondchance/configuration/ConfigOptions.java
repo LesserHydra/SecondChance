@@ -16,10 +16,13 @@ public class ConfigOptions {
 	public final boolean dropItemsOnForget;
 	public final boolean dropExpOnForget;
 	public final boolean breakOnHit;
-	public final int maxPerPlayer;
 	public final boolean isProtected;
 	public final long locationCheckDelay;
 	public final long particleDelay;
+	
+	public final int deathsTillForget;
+	public final int ticksTillForget;
+	public final long timeCheckDelay;
 	
 	public final DeathpointMessage deathMessage;
 	public final DeathpointMessage forgetMessage;
@@ -44,10 +47,13 @@ public class ConfigOptions {
 		this.dropItemsOnForget = config.getBoolean("Drop Items When Forgotten", true);
 		this.dropExpOnForget = config.getBoolean("Drop Experience When Forgotten", false);
 		this.breakOnHit = config.getBoolean("Break Deathpoint On Leftclick", false);
-		this.maxPerPlayer = config.getInt("Player Deathpoint Maximum", 1);
 		this.isProtected = config.getBoolean("Owner Based", true);
 		this.locationCheckDelay = config.getLong("Safe Location Timer Delay", 40);
 		this.particleDelay = config.getLong("Particle Timer Delay", 20);
+		
+		this.deathsTillForget = config.getInt("Number of Deaths Before Deathpoint Forgotten", 1);
+		this.ticksTillForget = config.getInt("Number of Ticks Before Deathpoint Forgotten", -1);
+		this.timeCheckDelay = config.getLong("Time Check Delay", 400);
 		
 		this.deathMessage = new DeathpointMessage(config.getString("Death Message", "&dA memory forms in the back of your mind."));
 		this.forgetMessage = new DeathpointMessage(config.getString("Forget Message", "&cYou feel something slipping away..."));

@@ -1,13 +1,10 @@
 package com.lesserhydra.secondchance;
 
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -133,7 +130,7 @@ class DeathpointHandler implements Listener {
 		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
 		
 		//Destroy old deathpoint(s)
-		destroyOldDeathpoints(player);
+		if (options.deathsTillForget > 0) worlds.values().forEach(handler -> handler.updateDeathsTillForget(player));
 		
 		//Get location
 		Location location = getSafePosition(player);
@@ -163,7 +160,7 @@ class DeathpointHandler implements Listener {
 		
 		//Create if not empty
 		if (itemsToHold == null && exp == 0) return;
-		Deathpoint deathpoint = new Deathpoint(player, location, itemsToHold, exp);
+		Deathpoint deathpoint = new Deathpoint(player, location, itemsToHold, exp, options.deathsTillForget, options.ticksTillForget);
 		options.creationSound.run(location, player);
 		options.deathMessage.sendMessage(player, deathpoint);
 		handler.addDeathpoint(deathpoint);
@@ -240,24 +237,6 @@ class DeathpointHandler implements Listener {
 		WorldHandler newWorldHandler = new WorldHandler(plugin, options, world);
 		newWorldHandler.init();
 		worlds.put(world.getUID(), newWorldHandler);
-	}
-	
-	private void destroyOldDeathpoints(Player player) {
-		if (options.maxPerPlayer <= 0) return;
-		
-		Deque<Deathpoint> playerDeathpoints = worlds.values().stream()
-				.flatMap(WorldHandler::deathpoints)
-				.filter(point -> point.getOwnerUniqueId().equals(player.getUniqueId()))
-				.collect(Collectors.toCollection(LinkedList::new));
-		
-		while (playerDeathpoints.size() >= options.maxPerPlayer) {
-			Deathpoint deathpoint = playerDeathpoints.remove();
-			options.forgetSound.run(deathpoint.getLocation(), player);
-			options.forgetMessage.sendMessage(player, deathpoint);
-			if (options.dropItemsOnForget) deathpoint.dropItems();
-			if (options.dropExpOnForget) deathpoint.dropExperience();
-			worlds.get(deathpoint.getWorld().getUID()).destroyDeathpoint(deathpoint);
-		}
 	}
 	
 	private Deathpoint findDeathpointFromHitbox(LivingEntity hitbox) {

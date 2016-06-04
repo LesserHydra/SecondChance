@@ -42,7 +42,6 @@ class YAMLSaveHandler implements SaveHandler {
 		save.getList(SAVE_SECTION, Arrays.asList()).stream()
 				.filter(obj -> (obj instanceof Deathpoint))
 				.map(point -> (Deathpoint) point)
-				.sorted()
 				.forEachOrdered(results::add);
 		return results;
 	}
@@ -53,11 +52,10 @@ class YAMLSaveHandler implements SaveHandler {
 		YamlConfiguration save = new YamlConfiguration();
 		save.set(SAVE_SECTION, deathpoints);
 		
-		//TODO: Handle gracefully
+		//TODO: Handle gracefully?
 		try {
 			save.save(file);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

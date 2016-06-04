@@ -81,9 +81,9 @@ public class DeathpointHandlerTest {
 		
 		Player mockPlayer = mock(Player.class);
 		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
-		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 0, 0), null, 0);
-		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0);
-		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0);
+		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 0, 0), null, 0, -1, -1L);
+		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0, -1, -1L);
+		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0, -1, -1L);
 		
 		fakeSaveHandler.save(mockWorld1, Arrays.asList(point1, point2));
 		fakeSaveHandler.save(mockWorld2, Arrays.asList(point3));
