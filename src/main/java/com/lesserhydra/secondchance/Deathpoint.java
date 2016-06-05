@@ -21,12 +21,13 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.util.NumberConversions;
 import com.lesserhydra.bukkitutil.ItemStackUtils;
 
 /**
  * A floating "container" that holds items and experience when a player dies.
  */
-public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
+public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Cloneable {
 	
 	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
@@ -50,8 +51,10 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 	 * @param location Deathpoint exists at
 	 * @param items Contents of deathpoint (must fit in inventory)
 	 * @param experience Experience contained in deathpoint
+	 * @param deathsTillForget Number of times the owner has to die before this deathpoint is forgotten
+	 * @param ticksTillForget Number of ticks before this deathpoint is forgotten
 	 */
-	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience, int timeToLive, long countdown) {
+	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience, int deathsTillForget, long ticksTillForget) {
 		this.creationInstant = Instant.now();
 		this.ownerUniqueId = owner.getUniqueId();
 		this.location = location.clone();
@@ -59,8 +62,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		this.inventory = createInventory(items);
 		this.experience = experience;
 		
-		this.deathsTillForget = timeToLive;
-		this.ticksTillForget = countdown;
+		this.deathsTillForget = deathsTillForget;
+		this.ticksTillForget = ticksTillForget;
 	}
 	
 	/**
@@ -79,13 +82,32 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		
 		Object dtf = map.get("deathsTillForget");
 		if (dtf == null) dtf = 1; //Compatability for old saves
-		this.deathsTillForget = (int) dtf;
+		this.deathsTillForget = NumberConversions.toInt(dtf);
 		
 		Object ttf = map.get("ticksTillForget");
 		if (ttf == null) ttf = -1; //Compatability for old saves
-		this.ticksTillForget = (int) ttf;
+		this.ticksTillForget = NumberConversions.toLong(ttf);
 	}
 	
+	/*
+	 * For use by the clone method
+	 */
+	private Deathpoint(Deathpoint deathpoint) {
+		this.creationInstant = deathpoint.creationInstant;
+		this.ownerUniqueId = deathpoint.ownerUniqueId;
+		this.location = deathpoint.location.clone();
+		
+		this.inventory = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
+		inventory.setContents(deathpoint.inventory.getContents().clone());
+		this.experience = deathpoint.experience;
+		
+		this.deathsTillForget = deathpoint.deathsTillForget;
+		this.ticksTillForget = deathpoint.ticksTillForget;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Map<String, Object> serialize() {
 		Map<String, Object> result = new HashMap<>();
@@ -249,11 +271,25 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 		return ownerUniqueId;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Inventory getInventory() {
 		return inventory;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Deathpoint clone() {
+		return new Deathpoint(this);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int hashCode() {
 		return (101 * ownerUniqueId.hashCode())
@@ -261,6 +297,9 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable {
 				^ (107 * creationInstant.hashCode());
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Deathpoint)) return false;

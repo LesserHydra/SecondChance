@@ -15,9 +15,20 @@ import com.lesserhydra.secondchance.configuration.ConfigOptions;
 public class SecondChance extends JavaPlugin {
 	
 	private static Plugin plugin;
-
+	
+	/**
+	 * Permission that allows spawning of deathpoints on death
+	 */
 	public static final Permission enabledPermission = new Permission("secondchance.enabled", "Allows spawning of deathpoints on death", PermissionDefault.TRUE);
+	
+	/**
+	 * Permission that allows access to protected deathpoints
+	 */
 	public static final Permission thiefPermission = new Permission("secondchance.thief", "Allows access to protected deathpoints", PermissionDefault.FALSE);
+	
+	/**
+	 * Permission that allows use of admin commands
+	 */
 	public static final Permission commandPermission = new Permission("secondchance.maincommand", "Allows use of admin commands", PermissionDefault.OP);
 	
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
@@ -87,7 +98,7 @@ public class SecondChance extends JavaPlugin {
 		return true;
 	}
 	
-	public SaveHandler getSaveHandler() {
+	SaveHandler getSaveHandler() {
 		return saveHandler;
 	}
 	

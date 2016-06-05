@@ -17,7 +17,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
-public class WorldHandler {
+class WorldHandler {
 	
 	private final SecondChance plugin;
 	private final ConfigOptions options;
