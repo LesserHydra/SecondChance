@@ -102,6 +102,11 @@ public class SecondChance extends JavaPlugin {
 		return saveHandler;
 	}
 	
+	public static Plugin instance() {
+		if (plugin == null) throw new IllegalStateException("Plugin is not enabled!");
+		return plugin;
+	}
+	
 	public static Logger logger() {
 		if (plugin == null) throw new IllegalStateException("Plugin is not enabled!");
 		return plugin.getLogger();

@@ -3,7 +3,6 @@ package com.lesserhydra.secondchance;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -18,9 +17,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -181,6 +181,7 @@ class DeathpointHandler implements Listener {
 		if (!options.breakOnHit) return;
 		if (event.getEntityType() != EntityType.ARMOR_STAND) return;
 		if (event.getDamager().getType() != EntityType.PLAYER) return;
+		if (event.getCause() != DamageCause.ENTITY_ATTACK) return;
 		
 		Deathpoint deathpoint = findDeathpointFromHitbox((ArmorStand) event.getEntity());
 		if (deathpoint == null) return;
@@ -197,7 +198,7 @@ class DeathpointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
+	public void onPlayerClickArmorStand(PlayerInteractEntityEvent event) {
 		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
 		Deathpoint deathpoint = findDeathpointFromHitbox((ArmorStand) event.getRightClicked());
@@ -240,11 +241,10 @@ class DeathpointHandler implements Listener {
 	}
 	
 	private Deathpoint findDeathpointFromHitbox(LivingEntity hitbox) {
-		Optional<Deathpoint> result = hitbox.getMetadata("deathpoint").stream()
+		return hitbox.getMetadata("deathpoint").stream()
 				.filter(meta -> meta.getOwningPlugin() == plugin)
 				.map(meta -> (Deathpoint) meta.value())
-				.findAny();
-		return result.orElse(null);
+				.findAny().orElse(null);
 	}
 	
 	private void setSafePosition(Player player) {

@@ -30,6 +30,7 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Cloneable {
 	
 	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
+	private static final String HITBOX_ATTRIBUTE_STRING = "isSecondChanceHitbox";
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
 	private final UUID ownerUniqueId;
@@ -140,11 +141,11 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
 		hitbox.setGravity(false);
 		hitbox.setVisible(false);
-		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.getPlugin(SecondChance.class), this));
+		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.instance(), this));
 		
 		//Add attribute for identifying in case of persistance (Fallback, not relied upon for normal operation)
 		hitbox.getAttribute(Attribute.GENERIC_MAX_HEALTH)
-				.addModifier(new AttributeModifier(HITBOX_ATTRIBUTE_UUID, "isSecondChanceHitbox", 0, Operation.ADD_NUMBER));
+				.addModifier(new AttributeModifier(HITBOX_ATTRIBUTE_UUID, HITBOX_ATTRIBUTE_STRING, 0, Operation.ADD_NUMBER));
 	}
 	
 	/**
@@ -320,7 +321,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	public static boolean armorstandIsHitbox(ArmorStand entity) {
 		return entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers().stream()
 				.filter(mod -> HITBOX_ATTRIBUTE_UUID.equals(mod.getUniqueId()))
-				.anyMatch(mod -> "isSecondChanceHitbox".equals(mod.getName()));
+				.anyMatch(mod -> HITBOX_ATTRIBUTE_STRING.equals(mod.getName()));
 	}
 	
 	private Inventory createInventory(ItemStack[] items) {
