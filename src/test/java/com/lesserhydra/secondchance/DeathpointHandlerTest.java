@@ -20,7 +20,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -34,13 +33,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.*;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
-import com.lesserhydra.testing.Capsule;
+import com.lesserhydra.testing.TestUtils;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({WorldHandler.class, Bukkit.class, JavaPlugin.class, SaveHandler.class})
@@ -62,7 +60,7 @@ public class DeathpointHandlerTest {
 		BDDMockito.given(Bukkit.getScheduler()).willReturn(mockScheduler);
 		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
 		//Inventory creation
-		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(DeathpointHandlerTest::createMockInventory);
+		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(TestUtils::createMockInventory);
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
@@ -187,14 +185,6 @@ public class DeathpointHandlerTest {
 		assertTrue(resultingContents.containsAll(Arrays.asList(items[0], items[1], items[2])));
 		assertFalse(resultingContents.contains(items[3]));
 		assertFalse(resultingContents.contains(items[4]));
-	}
-	
-	private static Inventory createMockInventory(InvocationOnMock invoke) {
-		Capsule<ItemStack[]> contents = new Capsule<>();
-		Inventory inv = mock(Inventory.class);
-		doAnswer(i -> contents.set(i.getArgumentAt(0, ItemStack[].class))).when(inv).setContents(any(ItemStack[].class));
-		when(inv.getContents()).then(i -> contents.get());
-		return inv;
 	}
 	
 }
