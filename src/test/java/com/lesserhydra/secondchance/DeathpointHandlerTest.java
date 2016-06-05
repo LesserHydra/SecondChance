@@ -26,7 +26,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.SimplePluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 import org.junit.Before;
@@ -41,7 +40,7 @@ import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.TestUtils;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({WorldHandler.class, Bukkit.class, JavaPlugin.class, SaveHandler.class})
+@PrepareForTest({WorldHandler.class, Bukkit.class, SaveHandler.class})
 @PowerMockIgnore("javax.management.*")
 public class DeathpointHandlerTest {
 	
@@ -50,7 +49,7 @@ public class DeathpointHandlerTest {
 	private DeathpointHandler deathpointHandler;
 	
 	@Before public void init() throws Exception {
-		PowerMockito.mockStatic(Bukkit.class, JavaPlugin.class, SaveHandler.class);
+		PowerMockito.mockStatic(Bukkit.class, SaveHandler.class);
 		
 		//Scheduler and server
 		BukkitScheduler mockScheduler = mock(BukkitScheduler.class);
@@ -64,8 +63,8 @@ public class DeathpointHandlerTest {
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
+		Whitebox.setInternalState(SecondChance.class, Plugin.class, mockPlugin);
 		when(mockPlugin.getSaveHandler()).thenReturn(fakeSaveHandler);
-		BDDMockito.given(JavaPlugin.getPlugin(eq(SecondChance.class))).willReturn(mockPlugin);
 		
 		//Instantiate deathpoint handler
 		deathpointHandler = new DeathpointHandler(mockPlugin);
