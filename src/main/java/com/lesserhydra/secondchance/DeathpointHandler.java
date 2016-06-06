@@ -20,7 +20,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -141,7 +141,7 @@ class DeathpointHandler implements Listener {
 		ItemStack[] itemsToHold = null;
 		if (options.holdItems && !event.getKeepInventory()) {
 			//Store all inventory items that have been dropped, and remove from drops
-			itemsToHold = player.getInventory().getContents();
+			itemsToHold = SecondChance.compat().inventoryContents(player.getInventory());
 			for (int i = 0; i < itemsToHold.length; i++) {
 				boolean wasRemoved = event.getDrops().remove(itemsToHold[i]);
 				if (!wasRemoved) itemsToHold[i] = null;
@@ -198,7 +198,7 @@ class DeathpointHandler implements Listener {
 	}
 	
 	@EventHandler(priority = EventPriority.LOWEST)
-	public void onPlayerClickArmorStand(PlayerInteractEntityEvent event) {
+	public void onPlayerClickArmorStand(PlayerInteractAtEntityEvent event) {
 		if (!(event.getRightClicked() instanceof ArmorStand)) return;
 		
 		Deathpoint deathpoint = findDeathpointFromHitbox((ArmorStand) event.getRightClicked());

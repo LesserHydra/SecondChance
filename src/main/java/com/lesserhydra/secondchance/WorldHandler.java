@@ -40,7 +40,7 @@ class WorldHandler {
 		world.getEntities().stream()
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
-				.filter(Deathpoint::armorstandIsHitbox)
+				.filter(SecondChance.compat()::armorstandIsHitbox)
 				.forEach(Entity::remove);
 		
 		//Initiate all deathpoints in world
@@ -95,7 +95,7 @@ class WorldHandler {
 		Arrays.stream(chunk.getEntities())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
-				.filter(Deathpoint::armorstandIsHitbox)
+				.filter(SecondChance.compat()::armorstandIsHitbox)
 				.peek(e -> plugin.getLogger().warning("Found residual armorstand."))
 				.forEach(Entity::remove);
 		

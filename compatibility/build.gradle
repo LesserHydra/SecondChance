@@ -1,0 +1,27 @@
+dependencies {
+  compile project(':compatibility:base')
+  compile project(':compatibility:1_8_R1')
+  compile project(':compatibility:1_8_R2')
+  compile project(':compatibility:1_8_R3')
+  compile project(':compatibility:1_9_Plus')
+}
+
+//Copy subproject classes
+task copyModuleClasses(type: Copy, dependsOn: subprojects.compileJava) {
+  subprojects.each {
+    subproject -> from subproject.sourceSets.main.output.classesDir
+  }
+  into sourceSets.main.output.classesDir
+}
+
+//Copy subproject resources
+task copyModuleResources(type: Copy, dependsOn: subprojects.processResources) {
+  subprojects.each {
+    subproject -> from subproject.sourceSets.main.output.resourcesDir
+  }
+  into sourceSets.main.output.resourcesDir
+}
+
+classes.dependsOn(copyModuleClasses, copyModuleResources)
+copyModuleClasses.mustRunAfter(compileJava)
+copyModuleResources.mustRunAfter(processResources)

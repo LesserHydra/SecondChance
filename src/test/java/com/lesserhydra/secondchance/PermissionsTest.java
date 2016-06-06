@@ -25,7 +25,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -41,6 +41,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+import com.lesserhydra.secondchance.compat.Compat;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.TestUtils;
 
@@ -92,12 +93,14 @@ public class PermissionsTest {
 		this.configFile = mock(File.class);
 		when(configFile.exists()).thenReturn(true);
 		
-		this.plugin = Whitebox.newInstance(SecondChance.class);
-		Whitebox.setInternalState(SecondChance.class, Plugin.class, plugin);
+		this.plugin = spy(Whitebox.newInstance(SecondChance.class));
+		Whitebox.setInternalState(SecondChance.class, SecondChance.class, plugin);
+		Whitebox.setInternalState(plugin, Compat.class, new TestCompat());
 		Whitebox.setInternalState(plugin, "saveFolder", saveFolder);
 		Whitebox.setInternalState(plugin, "dataFolder", dataFolder, JavaPlugin.class);
-		Whitebox.setInternalState(plugin, "configFile", dataFolder, JavaPlugin.class);
-		Whitebox.setInternalState(plugin, "classLoader", new ClassLoader() {}, JavaPlugin.class);
+		doReturn(new YamlConfiguration()).when(plugin).getConfig();
+		doNothing().when(plugin).reloadConfig();
+		doNothing().when(plugin).saveDefaultConfig();
 		
 		this.options = new ConfigOptions(new YamlConfiguration());
 		
@@ -238,7 +241,7 @@ public class PermissionsTest {
 		when(player1.hasPermission(eq(SecondChance.thiefPermission))).thenReturn(false);
 		
 		/*----------When----------*/
-		PlayerInteractEntityEvent event = new PlayerInteractEntityEvent(player1, hitbox2);
+		PlayerInteractAtEntityEvent event = new PlayerInteractAtEntityEvent(player1, hitbox2, null);
 		handler.onPlayerClickArmorStand(event);
 		
 		/*----------Then----------*/
@@ -256,7 +259,7 @@ public class PermissionsTest {
 		when(player1.hasPermission(eq(SecondChance.thiefPermission))).thenReturn(true);
 		
 		/*----------When----------*/
-		PlayerInteractEntityEvent event = new PlayerInteractEntityEvent(player1, hitbox2);
+		PlayerInteractAtEntityEvent event = new PlayerInteractAtEntityEvent(player1, hitbox2, null);
 		handler.onPlayerClickArmorStand(event);
 		
 		/*----------Then----------*/

@@ -15,7 +15,6 @@ public class TestUtils {
 		Inventory inv = mock(Inventory.class);
 		doAnswer(i -> contents.set(i.getArgumentAt(0, ItemStack[].class))).when(inv).setContents(any(ItemStack[].class));
 		when(inv.getContents()).then(i -> contents.get());
-		when(inv.getStorageContents()).then(i -> contents.get());
 		return inv;
 	}
 	

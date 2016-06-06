@@ -1,13 +1,12 @@
 package com.lesserhydra.secondchance.configuration;
 
-import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
-import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import com.lesserhydra.secondchance.SecondChance;
+import com.lesserhydra.secondchance.compat.ParticleEffect;
+import com.lesserhydra.secondchance.compat.SoundEffect;
 
 public class ConfigOptions {
 	
@@ -58,28 +57,32 @@ public class ConfigOptions {
 		this.deathMessage = new DeathpointMessage(config.getString("Death Message", "&dA memory forms in the back of your mind."));
 		this.forgetMessage = new DeathpointMessage(config.getString("Forget Message", "&cYou feel something slipping away..."));
 		
-		this.particlePrimary = getParticleEffect("Primary Particles", new ParticleEffect(Particle.PORTAL, 50, 0.2, 0.5, false), config);
-		this.particleSecondary = getParticleEffect("Secondary Particles", new ParticleEffect(Particle.END_ROD, 15, 10, 0.1, true), config);
+		this.particlePrimary = getParticleEffect("Primary Particles", SecondChance.compat().makeParticleEffect("PORTAL", 50, 0.2, 0.5, false), config);
+		this.particleSecondary = getParticleEffect("Secondary Particles", SecondChance.compat().makeParticleEffect("END_ROD", 15, 10, 0.1, true), config);
 		
 		this.ambientSoundDelay = config.getLong("Ambient Sound Delay", 50);
-		this.ambientSound = getSoundEffect("Play Ambient Sound", new SoundEffect(true, "item.elytra.flying", 0.1f, 2.0f, false), config);
-		this.creationSound = getSoundEffect("Play Sound on Deathpoint Created", new SoundEffect(true, "entity.zombie_villager.converted", 1.0f, 2.0f, true), config);
-		this.forgetSound = getSoundEffect("Play Sound on Deathpoint Forgotten", new SoundEffect(false, "entity.lightning.thunder", 0.75f, 2.0f, true), config);
-		this.openSound = getSoundEffect("Play Sound on Deathpoint Opened", new SoundEffect(false, "ui.button.click", 1.0f, 1.0f, false), config);
-		this.closeSound = getSoundEffect("Play Sound on Deathpoint Closed", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
-		this.breakSound = getSoundEffect("Play Sound on Deathpoint Broken", new SoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
+		this.ambientSound = getSoundEffect("Play Ambient Sound", SecondChance.compat().makeSoundEffect(true, "item.elytra.flying", 0.1f, 2.0f, false), config);
+		this.creationSound = getSoundEffect("Play Sound on Deathpoint Created", SecondChance.compat().makeSoundEffect(true, "entity.zombie_villager.converted", 1.0f, 2.0f, true), config);
+		this.forgetSound = getSoundEffect("Play Sound on Deathpoint Forgotten", SecondChance.compat().makeSoundEffect(false, "entity.lightning.thunder", 0.75f, 2.0f, true), config);
+		this.openSound = getSoundEffect("Play Sound on Deathpoint Opened", SecondChance.compat().makeSoundEffect(false, "ui.button.click", 1.0f, 1.0f, false), config);
+		this.closeSound = getSoundEffect("Play Sound on Deathpoint Closed", SecondChance.compat().makeSoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
+		this.breakSound = getSoundEffect("Play Sound on Deathpoint Broken", SecondChance.compat().makeSoundEffect(true, "entity.item.pickup", 1.0f, 0.5f, false), config);
 		
 		this.useWorldWhitelist = config.getBoolean("Use World Whitelist", false);
 		config.getStringList("World Blacklist/Whitelist").forEach(this.worldBlacklist::add);
 	}
 	
+	public boolean isWorldDisabled(World world) {
+		return useWorldWhitelist ^ worldBlacklist.contains(world.getName());
+	}
+	
 	private static ParticleEffect getParticleEffect(String path, ParticleEffect def, FileConfiguration config) {
-		Particle type = getEnum(path + ".Type", def.getType(), config);
+		String type = config.getString(path + ".Type", def.getName());
 		int count = config.getInt(path + ".Count", def.getAmount());
 		double spread = config.getDouble(path + ".Spread", def.getSpread());
 		double speed = config.getDouble(path + ".Speed", def.getSpeed());
 		boolean ownerOnly = config.getBoolean(path + ".Owner Only", def.isOwnerOnly());
-		return new ParticleEffect(type, count, spread, speed, ownerOnly);
+		return SecondChance.compat().makeParticleEffect(type, count, spread, speed, ownerOnly);
 	}
 	
 	private static SoundEffect getSoundEffect(String path, SoundEffect def, FileConfiguration config) {
@@ -88,25 +91,7 @@ public class ConfigOptions {
 		float volume = (float) config.getDouble(path + ".Volume", def.getVolume());
 		float pitch = (float) config.getDouble(path + ".Pitch", def.getPitch());
 		boolean direct = config.getBoolean(path + ".Direct", def.isDirect());
-		return new SoundEffect(enabled, sound, volume, pitch, direct);
-	}
-	
-	private static <T extends Enum<T>> T getEnum(String path, T def, FileConfiguration config) {
-		String configString = config.getString(path, null);
-		if (configString == null) return def;
-		
-		Optional<T> match = EnumSet.allOf(def.getDeclaringClass()).stream()
-				.filter(type -> configString.equalsIgnoreCase(type.name()))
-				.findAny();
-		
-		if (match.isPresent()) return match.get();
-		SecondChance.logger().warning("There is no " + def.getDeclaringClass().getName() + " with the name \"" + configString + "\".");
-		SecondChance.logger().warning("Defaulting to " + def.name());
-		return def;
-	}
-
-	public boolean isWorldDisabled(World world) {
-		return useWorldWhitelist ^ worldBlacklist.contains(world.getName());
+		return SecondChance.compat().makeSoundEffect(enabled, sound, volume, pitch, direct);
 	}
 
 }

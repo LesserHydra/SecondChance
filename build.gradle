@@ -11,18 +11,24 @@ import org.apache.tools.ant.filters.ReplaceTokens
 version = generateVersion('1.0')
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
 
-repositories {
-  mavenLocal()
-  mavenCentral()
-  maven {
-    url "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+allprojects {
+  apply plugin: 'java'
+  sourceCompatibility = '1.8'
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'}
   }
 }
 
 dependencies {
   //Bukkit api
-  compile 'org.bukkit:bukkit:1.9-R0.1-SNAPSHOT'
+  compile 'org.bukkit:bukkit:1.8-R0.1-SNAPSHOT'
 
+  //Compatibility modules
+  compile project(':compatibility')
+
+  //Testing libraries
   testCompile 'junit:junit:4.12'
   testCompile 'org.assertj:assertj-core:3.4.+'
   testCompile 'org.powermock:powermock-core:1.6.+'
@@ -31,27 +37,26 @@ dependencies {
   testCompile 'org.mockito:mockito-all:1.10.+'
 }
 
-task generatePluginYaml(type: Copy) {
+//Add compatibility modules to jar
+jar {
+  from project(':compatibility').sourceSets.main.output.classesDir
+  from project(':compatibility').sourceSets.main.output.resourcesDir
+}
+
+//Generate plugin.yml
+processResources {
+  inputs.file 'build.gradle' //So it's regenerated if version changes
   from 'templates/plugin.yml'
-  into 'src/main/resources/'
   filter(ReplaceTokens, tokens: [
-		version:		version,
+    version:		version,
     mainClass:  pluginMain,
   ])
 }
-
-task removePluginYaml(type: Delete) {
-	delete 'src/main/resources/plugin.yml'
-}
-
-generatePluginYaml.dependsOn('removePluginYaml')
-processResources.dependsOn('generatePluginYaml')
-clean.dependsOn('removePluginYaml')
 
 String generateVersion(workingVersion) {
   Grgit repo = Grgit.open(project.file('.'))
   Tag currentTag = repo.tag.list().find {it.commit == repo.head()}
 
-  if (currentTag == null) return workingVersion + '-' + repo.head().abbreviatedId
+  if (currentTag == null) return workingVersion + '-SNAPSHOT'
   return currentTag.getName()
 }

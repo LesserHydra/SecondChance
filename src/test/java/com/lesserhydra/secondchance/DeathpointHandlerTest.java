@@ -36,6 +36,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.*;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+import com.lesserhydra.secondchance.compat.Compat;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.TestUtils;
 
@@ -63,7 +64,8 @@ public class DeathpointHandlerTest {
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
-		Whitebox.setInternalState(SecondChance.class, Plugin.class, mockPlugin);
+		Whitebox.setInternalState(SecondChance.class, SecondChance.class, mockPlugin);
+		Whitebox.setInternalState(mockPlugin, Compat.class, new TestCompat());
 		when(mockPlugin.getSaveHandler()).thenReturn(fakeSaveHandler);
 		
 		//Instantiate deathpoint handler
