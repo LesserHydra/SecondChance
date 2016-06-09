@@ -1,10 +1,8 @@
 package com.lesserhydra.secondchance.command;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,8 +14,12 @@ import com.lesserhydra.util.MapBuilder;
 public class MainCommand implements TabCompleter, CommandExecutor {
 	
 	private final Map<String, Subcommand> subcommands = MapBuilder.init(HashMap<String, Subcommand>::new)
+			.put("break", new BreakSubcommand(this))
+			.put("list", new ListSubcommand(this))
 			.put("reload", new ReloadSubcommand())
 			.buildImmutable();
+	
+	private ListedPoints listed = new ListedPoints();
 	
 
 	@Override
@@ -34,7 +36,7 @@ public class MainCommand implements TabCompleter, CommandExecutor {
 		//Subcommand
 		Subcommand sub = subcommands.get(args[0].toLowerCase());
 		if (sub == null) return false; //Invalid
-		sub.execute(sender, command, alias, args);
+		sub.execute(sender, command, alias, getSubcommandArgs(args));
 		return true;
 	}
 
@@ -49,7 +51,11 @@ public class MainCommand implements TabCompleter, CommandExecutor {
 		//Autocomplete the subcommand arguments
 		Subcommand sub = subcommands.get(args[0].toLowerCase());
 		if (sub == null) return Collections.emptyList(); //Invalid
-		return sub.autoCompleteArg(args);
+		return sub.autoCompleteArg(getSubcommandArgs(args));
+	}
+	
+	ListedPoints getListed() {
+		return listed;
 	}
 
 	private List<String> completeSubCmd(String begin) {
@@ -57,5 +63,10 @@ public class MainCommand implements TabCompleter, CommandExecutor {
 				.filter(name -> name.startsWith(begin))
 				.collect(Collectors.toList());
 	}
+	
+	private String[] getSubcommandArgs(String[] mainArgs) {
+		return (mainArgs.length > 1 ? Arrays.copyOfRange(mainArgs, 1, mainArgs.length) : new String[0]);
+	}
+	
 
 }

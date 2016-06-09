@@ -2,6 +2,7 @@ package com.lesserhydra.secondchance;
 
 import java.io.File;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
@@ -90,6 +91,10 @@ public class SecondChance extends JavaPlugin {
 		//Reinit everything
 		reloadConfig();
 		deathpointHandler.init(new ConfigOptions(getConfig()));
+	}
+	
+	public Stream<WorldHandler> worldHandlers() {
+		return deathpointHandler.worldHandlers();
 	}
 	
 	SaveHandler getSaveHandler() {

@@ -17,7 +17,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitTask;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
-class WorldHandler {
+public class WorldHandler {
 	
 	private final SecondChance plugin;
 	private final ConfigOptions options;
@@ -29,13 +29,22 @@ class WorldHandler {
 	private BukkitTask timeCheckTask;
 	
 	
-	public WorldHandler(SecondChance plugin, ConfigOptions options, World world) {
+	WorldHandler(SecondChance plugin, ConfigOptions options, World world) {
 		this.plugin = plugin;
 		this.options = options;
 		this.world = world;
 	}
 	
-	public void init() {
+	public Stream<Deathpoint> deathpoints() {
+		return worldDeathpoints.stream();
+	}
+	
+	public void destroyDeathpoint(Deathpoint deathpoint) {
+		deathpoint.destroy();
+		worldDeathpoints.remove(deathpoint);
+	}
+	
+	void init() {
 		//Remove residual hitboxes in world
 		world.getEntities().stream()
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
@@ -66,7 +75,7 @@ class WorldHandler {
 		}
 	}
 	
-	public void deinit() {
+	void deinit() {
 		//Cancel tasks
 		particleTask.cancel();
 		if (ambientSoundTask != null) ambientSoundTask.cancel();
@@ -80,17 +89,12 @@ class WorldHandler {
 		worldDeathpoints = null;
 	}
 	
-	public void addDeathpoint(Deathpoint deathpoint) {
+	void addDeathpoint(Deathpoint deathpoint) {
 		deathpoint.spawnHitbox();
 		worldDeathpoints.add(deathpoint);
 	}
 	
-	public void destroyDeathpoint(Deathpoint deathpoint) {
-		deathpoint.destroy();
-		worldDeathpoints.remove(deathpoint);
-	}
-	
-	public void onChunkLoad(Chunk chunk) {
+	void onChunkLoad(Chunk chunk) {
 		//Remove residual hitboxes
 		Arrays.stream(chunk.getEntities())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
@@ -105,13 +109,13 @@ class WorldHandler {
 				.forEach(Deathpoint::spawnHitbox);
 	}
 	
-	public void onChunkUnload(Chunk chunk) {
+	void onChunkUnload(Chunk chunk) {
 		worldDeathpoints.stream()
 				.filter((point) -> chunk.equals(point.getLocation().getChunk()))
 				.forEach(Deathpoint::despawnHitbox);
 	}
 	
-	public void onWorldSave() {
+	void onWorldSave() {
 		//Save
 		plugin.getSaveHandler().save(world, worldDeathpoints);
 		
@@ -128,11 +132,7 @@ class WorldHandler {
 		}, 1);
 	}
 	
-	public Stream<Deathpoint> deathpoints() {
-		return worldDeathpoints.stream();
-	}
-	
-	public void updateDeathsTillForget(Player player) {
+	void updateDeathsTillForget(Player player) {
 		for (Iterator<Deathpoint> it = worldDeathpoints.iterator(); it.hasNext();) {
 			Deathpoint deathpoint = it.next();
 			if (!deathpoint.getOwnerUniqueId().equals(player.getUniqueId())) continue;
@@ -140,14 +140,14 @@ class WorldHandler {
 		}
 	}
 	
-	private void updateTicksTillForget() {
+	void updateTicksTillForget() {
 		for (Iterator<Deathpoint> it = worldDeathpoints.iterator(); it.hasNext();) {
 			Deathpoint deathpoint = it.next();
 			if (deathpoint.updateTicksTillForget(options.timeCheckDelay)) forgetDeathpoint(deathpoint, it);
 		}
 	}
 	
-	private void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
+	void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
 		//Play sound and message for owner, if online
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		if (owner != null) {
@@ -160,6 +160,10 @@ class WorldHandler {
 		if (options.dropExpOnForget) deathpoint.dropExperience();
 		deathpoint.destroy();
 		it.remove();
+	}
+
+	public World getWorld() {
+		return world;
 	}
 	
 	private void runParticles(Deathpoint deathpoint) {

@@ -83,11 +83,12 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		if (ttf == null) ttf = -1; //Compatability for old saves
 		this.ticksTillForget = NumberConversions.toLong(ttf);
 	}
-	
-	/*
-	 * For use by the clone method
+
+	/**
+	 * Constructs a deathpoint copying a given deathpoint.
+	 * @param deathpoint Deathpoint to copy
 	 */
-	private Deathpoint(Deathpoint deathpoint) {
+	public Deathpoint(Deathpoint deathpoint) {
 		this.creationInstant = deathpoint.creationInstant;
 		this.ownerUniqueId = deathpoint.ownerUniqueId;
 		this.location = deathpoint.location.clone();
@@ -127,7 +128,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	/**
 	 * Spawns in the hitbox, if it doesn't already exist.
 	 */
-	public void spawnHitbox() {
+	void spawnHitbox() {
 		if (invalid || hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
 		
@@ -138,7 +139,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	/**
 	 * Despawns the hitbox, if it exists.
 	 */
-	public void despawnHitbox() {
+	void despawnHitbox() {
 		if (hitbox == null) return;
 		hitbox.remove();
 		hitbox = null;
@@ -148,7 +149,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * Updates the number of deaths till forgotten.
 	 * @return True if should be forgotten
 	 */
-	public boolean updateDeathsTillForget() {
+	boolean updateDeathsTillForget() {
 		deathsTillForget -= 1;
 		return (deathsTillForget < 1);
 	}
@@ -158,7 +159,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * @param ticks Number of ticks to update by
 	 * @return True if should be forgotten
 	 */
-	public boolean updateTicksTillForget(long ticks) {
+	boolean updateTicksTillForget(long ticks) {
 		ticksTillForget -= ticks;
 		return (ticksTillForget < 1);
 	}
@@ -166,7 +167,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	/**
 	 * Destroys this deathpoint, despawning the hitbox, clearing contents and invalidating.
 	 */
-	public void destroy() {
+	void destroy() {
 		despawnHitbox();
 		inventory.clear();
 		experience = 0;

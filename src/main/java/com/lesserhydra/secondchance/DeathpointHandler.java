@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -232,6 +233,10 @@ class DeathpointHandler implements Listener {
 		if (event.getPlayer() instanceof Player) options.closeSound.run(deathpoint.getLocation(), (Player) event.getPlayer());
 		deathpoint.dropItems();
 		worlds.get(deathpoint.getWorld().getUID()).destroyDeathpoint(deathpoint);
+	}
+	
+	public Stream<WorldHandler> worldHandlers() {
+		return worlds.values().stream();
 	}
 	
 	private void initWorld(World world) {
