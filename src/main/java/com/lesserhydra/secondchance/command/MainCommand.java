@@ -14,8 +14,9 @@ import com.lesserhydra.util.MapBuilder;
 public class MainCommand implements TabCompleter, CommandExecutor {
 	
 	private final Map<String, Subcommand> subcommands = MapBuilder.init(HashMap<String, Subcommand>::new)
-			.put("break", new BreakSubcommand(this))
 			.put("list", new ListSubcommand(this))
+			.put("break", new BreakSubcommand(this))
+			.put("delete", new DeleteSubcommand(this))
 			.put("reload", new ReloadSubcommand())
 			.buildImmutable();
 	
