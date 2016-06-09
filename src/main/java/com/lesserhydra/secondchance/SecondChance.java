@@ -2,14 +2,11 @@ package com.lesserhydra.secondchance;
 
 import java.io.File;
 import java.util.logging.Logger;
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import com.lesserhydra.secondchance.command.MainCommand;
 import com.lesserhydra.secondchance.compat.Compat;
 import com.lesserhydra.secondchance.compat.CompatHandler;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
@@ -65,6 +62,9 @@ public class SecondChance extends JavaPlugin {
 		deathpointHandler.init(new ConfigOptions(getConfig()));
 		//Register listener events
 		getServer().getPluginManager().registerEvents(deathpointHandler, this);
+		
+		//Register command executor
+		getCommand("SecondChance").setExecutor(new MainCommand());
 	}
 	
 	@Override
@@ -78,18 +78,7 @@ public class SecondChance extends JavaPlugin {
 	}
 	
 	//Reload command
-	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String lable, String[] args) {
-		if (!cmd.getName().equalsIgnoreCase("SecondChance")) return false;
-		
-		//Check permission node
-		if (!sender.hasPermission(commandPermission)) {
-			sender.sendMessage(ChatColor.RED + "You don't have permission to do that!");
-			return true;
-		}
-		
-		if (args.length < 1 || !args[0].equalsIgnoreCase("reload")) return false;
-		
+	public void reload() {
 		//Deinit everything
 		deathpointHandler.deinit();
 		
@@ -101,17 +90,13 @@ public class SecondChance extends JavaPlugin {
 		//Reinit everything
 		reloadConfig();
 		deathpointHandler.init(new ConfigOptions(getConfig()));
-		
-		//Finished
-		sender.sendMessage(ChatColor.GREEN + "Reloaded SecondChance");
-		return true;
 	}
 	
 	SaveHandler getSaveHandler() {
 		return saveHandler;
 	}
 	
-	public static Plugin instance() {
+	public static SecondChance instance() {
 		if (plugin == null) throw new IllegalStateException("Plugin is not enabled!");
 		return plugin;
 	}

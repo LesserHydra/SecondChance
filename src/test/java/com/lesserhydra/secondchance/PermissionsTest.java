@@ -16,6 +16,7 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -41,6 +42,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+import com.lesserhydra.secondchance.command.MainCommand;
 import com.lesserhydra.secondchance.compat.Compat;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.TestUtils;
@@ -272,6 +274,7 @@ public class PermissionsTest {
 	@Test
 	public void noCommand() {
 		/*----------Given----------*/
+		CommandExecutor mainCmd = new MainCommand();
 		CommandSender sender = mock(CommandSender.class);
 		when(sender.hasPermission(eq(SecondChance.commandPermission))).thenReturn(false);
 		
@@ -280,7 +283,7 @@ public class PermissionsTest {
 		String[] args = new String[]{"reload"};
 		
 		/*----------When----------*/
-		plugin.onCommand(sender, command, "secondchance", args);
+		mainCmd.onCommand(sender, command, "secondchance", args);
 		
 		/*----------Then----------*/
 		assertSame(Whitebox.getInternalState(handler, ConfigOptions.class), options);
@@ -292,6 +295,7 @@ public class PermissionsTest {
 	@Test
 	public void command() {
 		/*----------Given----------*/
+		CommandExecutor mainCmd = new MainCommand();
 		CommandSender sender = mock(CommandSender.class);
 		when(sender.hasPermission(eq(SecondChance.commandPermission))).thenReturn(true);
 		
@@ -300,7 +304,7 @@ public class PermissionsTest {
 		String[] args = new String[]{"reload"};
 		
 		/*----------When----------*/
-		plugin.onCommand(sender, command, "secondchance", args);
+		mainCmd.onCommand(sender, command, "secondchance", args);
 		
 		/*----------Then----------*/
 		assertNotSame(Whitebox.getInternalState(handler, ConfigOptions.class), options);
