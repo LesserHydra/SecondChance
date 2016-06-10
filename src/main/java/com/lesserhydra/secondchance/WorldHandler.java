@@ -50,6 +50,7 @@ public class WorldHandler {
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
 				.filter(SecondChance.compat()::armorstandIsHitbox)
+				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
 				.forEach(Entity::remove);
 		
 		//Initiate all deathpoints in world
@@ -100,7 +101,7 @@ public class WorldHandler {
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
 				.filter(SecondChance.compat()::armorstandIsHitbox)
-				.peek(e -> plugin.getLogger().warning("Found residual armorstand."))
+				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
 				.forEach(Entity::remove);
 		
 		//Spawn deathpoint hitboxes
@@ -123,12 +124,12 @@ public class WorldHandler {
 		worldDeathpoints.stream()
 				.forEachOrdered(Deathpoint::despawnHitbox);
 		
-		//Schedual hitbox respawn
+		//Schedule hitbox respawn
 		final UUID worldUUID = world.getUID();
 		Bukkit.getScheduler().runTaskLater(plugin, () -> {
 			if (Bukkit.getWorld(worldUUID) == null) return;
 			worldDeathpoints.stream()
-					.forEachOrdered(Deathpoint::spawnHitbox);
+					.forEach(Deathpoint::spawnHitbox);
 		}, 1);
 	}
 	
