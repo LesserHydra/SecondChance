@@ -2,6 +2,22 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
 
+## [0.8] - 2016-06-09
+This update adds options for time/death limits on deathpoints, prelimary administration commands, Bukkit 1.8 support, and fixes a couple bugs.
+### Added
+- Added 'time till forget' option
+- Added 'deaths till forget' option
+- Added list, break, and delete subcommands, all with tab-completion
+- Added support for all 1.8 versions of bukkit
+### Changed
+- Replaced 'max deathpoints' with a more predictable 'deaths till forget' option
+### Fixed
+- Fixed deathpoints being broken by owner/'thief' arrows if 'break on leftclick' is enabled
+### Technical
+- Reworked gradle build logic, adding in a system for compatibility modules
+- Abstracted Bukkit 1.9 dependant API functionality into compatibility modules (three for 1.8, one for 1.9+)
+- Simplified versioning system to append "SNAPSHOT" instead of abbreviated commit hash to snapshot builds
+
 ## [0.7] - 2016-05-20
 This update adds permissions and a world blacklist/whitelist.
 ### Added
@@ -16,7 +32,7 @@ This update adds permissions and a world blacklist/whitelist.
 ## [0.6.1] - 2016-05-10
 Quick bugfix update
 ### Fixed
-- Fixed <y> and <z> both resolving to <x> in messages
+- Fixed \<y\> and \<z\> both resolving to \<x\> in messages
 
 ## [0.6] - 2016-05-01
 This update adds messages and sounds.
@@ -90,6 +106,7 @@ First unofficial "release"
 ### Technical
 - Rewrote just about everything
 
+[0.8]: https://github.com/Roboboy64/SecondChance/compare/0.7...0.8
 [0.7]: https://github.com/Roboboy64/SecondChance/compare/0.6.1...0.7
 [0.6.1]: https://github.com/Roboboy64/SecondChance/compare/0.6...0.6.1
 [0.6]: https://github.com/Roboboy64/SecondChance/compare/0.5...0.6

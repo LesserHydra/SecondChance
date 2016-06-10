@@ -10,6 +10,12 @@ Config version: 1
 #Default: 40
 Safe Location Timer Delay: 40
 
+#Delay for timer that updates the number of ticks till a deathpoint is forgotten (see below)
+#Every time the time update timer runs, all deathpoints will act as if they had been alive
+#for this entire delay, even if the deathpoint had just been created.
+#Default: 400
+Time Update Timer Delay: 400
+
 #Whether deathpoints should hold items on death
 #Default: true
 Hold Items: true
@@ -33,10 +39,13 @@ Drop Experience When Forgotten: false
 #Default: false
 Break Deathpoint On Leftclick: false
 
-#Maximum number of deathpoints allowed per player, before the oldest is
-#forgotten (-1 disables)
+#Number of owner deaths till a deathpoint is forgotten (-1 disables)
 #Default: 1
-Player Deathpoint Maximum: 1
+Number of Deaths Before Deathpoint Forgotten: 1
+
+#Time in ticks till a deathpoint is forgotten (-1 disables)
+#Default: 1
+Number of Ticks Before Deathpoint Forgotten: -1
 
 #Whether or not access is limited to a deathpoint's owner
 #Default: true
@@ -136,7 +145,7 @@ Secondary Particles:
 #http://minecraft.gamepedia.com/Commands#playsound
 #Note that invalid sounds will fail silently (pun not intended)
 
-#Delay for the timer that plays the ambient sound
+#Delay for the timer that plays the ambient sound (-1 or disabled sound disables timer)
 #Default: 50
 Ambient Sound Delay: 50
 

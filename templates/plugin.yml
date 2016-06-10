@@ -7,6 +7,6 @@ commands:
   SecondChance:
     aliases: [chance, sc]
     description: Main command for SecondChance
-    usage: /<command> <reload>
+    usage: /<command> <list|break|reload>
     permission: secondchance.maincommand
     permissions message: You don't have <permission>

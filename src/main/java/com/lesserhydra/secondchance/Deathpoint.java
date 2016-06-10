@@ -9,26 +9,22 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.util.NumberConversions;
 import com.lesserhydra.bukkitutil.ItemStackUtils;
 
 /**
  * A floating "container" that holds items and experience when a player dies.
  */
-public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Comparable<Deathpoint> {
+public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Cloneable {
 	
-	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
 	
 	private final UUID ownerUniqueId;
@@ -37,6 +33,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	
 	private Inventory inventory;
 	private int experience;
+	private int deathsTillForget;
+	private long ticksTillForget;
 	
 	private ArmorStand hitbox;
 	private boolean invalid = false;
@@ -48,14 +46,19 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * @param location Deathpoint exists at
 	 * @param items Contents of deathpoint (must fit in inventory)
 	 * @param experience Experience contained in deathpoint
+	 * @param deathsTillForget Number of times the owner has to die before this deathpoint is forgotten
+	 * @param ticksTillForget Number of ticks before this deathpoint is forgotten
 	 */
-	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience) {
+	public Deathpoint(Player owner, Location location, ItemStack[] items, int experience, int deathsTillForget, long ticksTillForget) {
 		this.creationInstant = Instant.now();
 		this.ownerUniqueId = owner.getUniqueId();
 		this.location = location.clone();
 		
 		this.inventory = createInventory(items);
 		this.experience = experience;
+		
+		this.deathsTillForget = deathsTillForget;
+		this.ticksTillForget = ticksTillForget;
 	}
 	
 	/**
@@ -71,8 +74,36 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		this.inventory = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
 		ItemStack[] contents = ((List<?>) map.get("contents")).toArray(new ItemStack[INV_SIZE]);
 		inventory.setContents(contents);
+		
+		Object dtf = map.get("deathsTillForget");
+		if (dtf == null) dtf = 1; //Compatability for old saves
+		this.deathsTillForget = NumberConversions.toInt(dtf);
+		
+		Object ttf = map.get("ticksTillForget");
+		if (ttf == null) ttf = -1; //Compatability for old saves
+		this.ticksTillForget = NumberConversions.toLong(ttf);
+	}
+
+	/**
+	 * Constructs a deathpoint copying a given deathpoint.
+	 * @param deathpoint Deathpoint to copy
+	 */
+	public Deathpoint(Deathpoint deathpoint) {
+		this.creationInstant = deathpoint.creationInstant;
+		this.ownerUniqueId = deathpoint.ownerUniqueId;
+		this.location = deathpoint.location.clone();
+		
+		this.inventory = Bukkit.getServer().createInventory(this, INV_SIZE, "Lost Inventory");
+		inventory.setContents(deathpoint.inventory.getContents().clone());
+		this.experience = deathpoint.experience;
+		
+		this.deathsTillForget = deathpoint.deathsTillForget;
+		this.ticksTillForget = deathpoint.ticksTillForget;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Map<String, Object> serialize() {
 		Map<String, Object> result = new HashMap<>();
@@ -87,6 +118,9 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		}
 		result.put("contents", Arrays.copyOf(contents, i+1));
 		result.put("experience", experience);
+		
+		result.put("deathsTillForget", deathsTillForget);
+		result.put("ticksTillForget", ticksTillForget);
 
 		return result;
 	}
@@ -94,34 +128,46 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	/**
 	 * Spawns in the hitbox, if it doesn't already exist.
 	 */
-	public void spawnHitbox() {
+	void spawnHitbox() {
 		if (invalid || hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
 		
-		Location standLoc = location.clone().add(0, -0.75, 0);
-		hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
-		hitbox.setGravity(false);
-		hitbox.setVisible(false);
-		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.getPlugin(SecondChance.class), this));
-		
-		//Add attribute for identifying in case of persistance (Fallback, not relied upon for normal operation)
-		hitbox.getAttribute(Attribute.GENERIC_MAX_HEALTH)
-				.addModifier(new AttributeModifier(HITBOX_ATTRIBUTE_UUID, "isSecondChanceHitbox", 0, Operation.ADD_NUMBER));
+		hitbox = SecondChance.compat().spawnHitbox(location);
+		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.instance(), this));
 	}
 	
 	/**
 	 * Despawns the hitbox, if it exists.
 	 */
-	public void despawnHitbox() {
+	void despawnHitbox() {
 		if (hitbox == null) return;
 		hitbox.remove();
 		hitbox = null;
 	}
 	
 	/**
+	 * Updates the number of deaths till forgotten.
+	 * @return True if should be forgotten
+	 */
+	boolean updateDeathsTillForget() {
+		deathsTillForget -= 1;
+		return (deathsTillForget < 1);
+	}
+	
+	/**
+	 * Updates the time in ticks till forgotten.
+	 * @param ticks Number of ticks to update by
+	 * @return True if should be forgotten
+	 */
+	boolean updateTicksTillForget(long ticks) {
+		ticksTillForget -= ticks;
+		return (ticksTillForget < 1);
+	}
+	
+	/**
 	 * Destroys this deathpoint, despawning the hitbox, clearing contents and invalidating.
 	 */
-	public void destroy() {
+	void destroy() {
 		despawnHitbox();
 		inventory.clear();
 		experience = 0;
@@ -159,11 +205,27 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	}
 	
 	/**
-	 * Checks if this deathpoint has not been destroyed.
+	 * Checks if this deathpoint has already been destroyed.
 	 * @return True if valid
 	 */
 	public boolean isInvalid() {
 		return invalid;
+	}
+	
+	/**
+	 * Returns the number of deaths before forgotten.
+	 * @return The number of deaths before forgotten
+	 */
+	public int getTimeToLive() {
+		return deathsTillForget;
+	}
+	
+	/**
+	 * Returns the number of ticks before forgotten.
+	 * @return The number of ticks before forgotten
+	 */
+	public long getTicksToLive() {
+		return ticksTillForget;
 	}
 	
 	/**
@@ -198,16 +260,25 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		return ownerUniqueId;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Inventory getInventory() {
 		return inventory;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
-	public int compareTo(Deathpoint other) {
-		return creationInstant.compareTo(other.getCreationInstant());
+	public Deathpoint clone() {
+		return new Deathpoint(this);
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int hashCode() {
 		return (101 * ownerUniqueId.hashCode())
@@ -215,6 +286,9 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 				^ (107 * creationInstant.hashCode());
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Deathpoint)) return false;
@@ -233,9 +307,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * @return Whether armorstand was used as a hitbox
 	 */
 	public static boolean armorstandIsHitbox(ArmorStand entity) {
-		return entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers().stream()
-				.filter(mod -> HITBOX_ATTRIBUTE_UUID.equals(mod.getUniqueId()))
-				.anyMatch(mod -> "isSecondChanceHitbox".equals(mod.getName()));
+		return SecondChance.compat().armorstandIsHitbox(entity);
 	}
 	
 	private Inventory createInventory(ItemStack[] items) {
@@ -246,7 +318,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		System.arraycopy(items, 9, contentsArray, 0, 27); //Main inventory
 		System.arraycopy(items, 0, contentsArray, 27, 9); //Hotbar
 		System.arraycopy(items, 36, contentsArray, INV_SIZE - 4, 4); //Armor
-		System.arraycopy(items, 40, contentsArray, 36, 1); //Off hand
+		if (items.length > 40) System.arraycopy(items, 40, contentsArray, 36, 1); //Off hand, for 1.9
 		
 		result.setContents(contentsArray);
 		return result;
