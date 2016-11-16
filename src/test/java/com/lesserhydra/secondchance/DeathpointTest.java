@@ -48,7 +48,7 @@ public class DeathpointTest {
 	}
 	
 	/*
-	 * Test deathpoint serializarion and deserialization
+	 * Test deathpoint serialization and deserialization
 	 */
 	@Test
 	public void serialization() {

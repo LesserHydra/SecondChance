@@ -1,9 +1,5 @@
 package com.lesserhydra.testing;
 
-import static org.mockito.Mockito.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -11,7 +7,16 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.util.Vector;
-import org.powermock.reflect.Whitebox;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.RETURNS_MOCKS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 public abstract class FakeWorld implements World {
 	
@@ -22,9 +27,9 @@ public abstract class FakeWorld implements World {
 	private Map<Vector, Block> blockMap = new HashMap<>();
 	
 	public static World mockBukkitWorld(String worldName) {
-		World mockWorld = mock(FakeWorld.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS).stubOnly());
-		Whitebox.setInternalState(mockWorld, String.class, worldName, FakeWorld.class);
-		Whitebox.setInternalState(mockWorld, UUID.class, UUID.randomUUID(), FakeWorld.class);
+		FakeWorld mockWorld = mock(FakeWorld.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS).stubOnly());
+		mockWorld.name = worldName;
+		mockWorld.uuid = UUID.randomUUID();
 		return mockWorld;
 	}
 	
@@ -45,7 +50,6 @@ public abstract class FakeWorld implements World {
 		if (block != null) return block;
 		
 		block = FakeBlock.mockBukkitBlock(this, x, y, z);
-		//when(mockBlock.getLocation()).thenReturn(new Location(this, blockLoc.getBlockX(), blockLoc.getBlockY(), blockLoc.getBlockZ()));
 		blockMap.put(blockLoc.clone(), block);
 		return block;
 	}

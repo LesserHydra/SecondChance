@@ -75,8 +75,9 @@ public class PermissionsTest {
 		
 		//Mock plugin setup
 		plugin = spy(Whitebox.newInstance(SecondChance.class));
-		Whitebox.setInternalState(SecondChance.class, SecondChance.class, plugin);
-		Whitebox.setInternalState(plugin, Compat.class, new TestCompat());
+		Whitebox.setInternalState(SecondChance.class, plugin);
+		Whitebox.setInternalState(plugin, new TestCompat());
+		Whitebox.setInternalState(plugin, "isEnabled", true);
 		doReturn(new YamlConfiguration()).when(plugin).getConfig();
 		doNothing().when(plugin).reload();
 		doNothing().when(plugin).reloadConfig();

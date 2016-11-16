@@ -12,6 +12,7 @@ import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.craftbukkit.v1_10_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_10_R1.inventory.CraftInventoryPlayer;
 import org.bukkit.craftbukkit.v1_10_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_10_R1.scheduler.CraftScheduler;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -47,7 +48,7 @@ public class FakeBukkit {
 		Whitebox.setInternalState(Bukkit.class, server);
 		when(server.getPluginManager()).thenReturn(new SimplePluginManager(server, new SimpleCommandMap(server)));
 		when(server.getItemFactory()).thenReturn(CraftItemFactory.instance());
-		when(server.getScheduler()).thenReturn(mock(BukkitScheduler.class, withSettings().defaultAnswer(RETURNS_MOCKS)));
+		when(server.getScheduler()).thenReturn(new CraftScheduler());
 		when(server.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(FakeBukkit::createMockInventory);
 		
 		//Worlds
@@ -69,6 +70,7 @@ public class FakeBukkit {
 	}
 	
 	public static void clear() {
+		Bukkit.getScheduler().cancelAllTasks();
 		worlds.clear();
 		players.clear();
 	}
