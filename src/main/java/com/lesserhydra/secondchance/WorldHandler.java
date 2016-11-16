@@ -141,14 +141,14 @@ public class WorldHandler {
 		}
 	}
 	
-	void updateTicksTillForget() {
+	private void updateTicksTillForget() {
 		for (Iterator<Deathpoint> it = worldDeathpoints.iterator(); it.hasNext();) {
 			Deathpoint deathpoint = it.next();
 			if (deathpoint.updateTicksTillForget(options.timeCheckDelay)) forgetDeathpoint(deathpoint, it);
 		}
 	}
 	
-	void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
+	 private void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
 		//Play sound and message for owner, if online
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		if (owner != null) {

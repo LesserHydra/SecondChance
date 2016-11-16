@@ -1,7 +1,6 @@
 package com.lesserhydra.secondchance;
 
 import java.io.File;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.permissions.Permission;
@@ -104,11 +103,6 @@ public class SecondChance extends JavaPlugin {
 	public static SecondChance instance() {
 		if (plugin == null) throw new IllegalStateException("Plugin is not enabled!");
 		return plugin;
-	}
-	
-	public static Logger logger() {
-		if (plugin == null) throw new IllegalStateException("Plugin is not enabled!");
-		return plugin.getLogger();
 	}
 	
 	public static Compat compat() {

@@ -62,8 +62,7 @@ class DeathpointHandler implements Listener {
 		//Stop safe location task
 		safeLocationTask.cancel();
 		//Deinit all remaining worlds
-		worlds.values().stream()
-				.forEach(WorldHandler::deinit);
+		worlds.values().forEach(WorldHandler::deinit);
 		//Clear members
 		worlds.clear();
 		options = null;
@@ -229,6 +228,11 @@ class DeathpointHandler implements Listener {
 		if (!(holder instanceof Deathpoint)) return;
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
+		if (Deathpoint.isViewingOnly(event.getPlayer())) {
+			Deathpoint.finishView(event.getPlayer());
+			return;
+		}
+		
 		if (deathpoint.isInvalid()) return;
 		if (event.getPlayer() instanceof Player) options.closeSound.run(deathpoint.getLocation(), (Player) event.getPlayer());
 		deathpoint.dropItems();
@@ -263,7 +267,10 @@ class DeathpointHandler implements Listener {
 	private Location getSafePosition(Player player) {
 		Location loc = (Location) player.getMetadata("lastSafePosition").stream()
 				.filter(value -> value.getOwningPlugin() == plugin)
-				.findFirst().get().value();
+				.findFirst()
+				//Use player location if safe location doesn't exist for some reason
+				.orElseGet(() -> new FixedMetadataValue(plugin, player.getLocation()))
+				.value();
 		return new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() + 1, loc.getBlockZ() + 0.5);
 	}
 	

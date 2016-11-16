@@ -12,6 +12,7 @@ import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.ExperienceOrb;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -23,6 +24,7 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
 /**
  * A floating "container" that holds items and experience when a player dies.
  */
+@SuppressWarnings("WeakerAccess")
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Cloneable {
 	
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
@@ -76,11 +78,11 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		inventory.setContents(contents);
 		
 		Object dtf = map.get("deathsTillForget");
-		if (dtf == null) dtf = 1; //Compatability for old saves
+		if (dtf == null) dtf = 1; //Compatibility for old saves
 		this.deathsTillForget = NumberConversions.toInt(dtf);
 		
 		Object ttf = map.get("ticksTillForget");
-		if (ttf == null) ttf = -1; //Compatability for old saves
+		if (ttf == null) ttf = -1; //Compatibility for old saves
 		this.ticksTillForget = NumberConversions.toLong(ttf);
 	}
 
@@ -300,6 +302,20 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 				&& creationInstant.equals(other.getCreationInstant());
 	}
 	
+	public void peekInv(HumanEntity player) {
+		player.openInventory(inventory);
+		player.setMetadata("isOnlyViewingDeathpoint", new FixedMetadataValue(SecondChance.instance(), true));
+	}
+	
+	public static boolean isViewingOnly(HumanEntity player) {
+		return player.getMetadata("isOnlyViewingDeathpoint").stream()
+				.anyMatch(value -> value.getOwningPlugin() == SecondChance.instance());
+	}
+	
+	public static void finishView(HumanEntity player) {
+		player.removeMetadata("isOnlyViewingDeathpoint", SecondChance.instance());
+	}
+	
 	/**
 	 * Checks if an armorstand was spawned for hitbox use. This is meant to be used as a safety net in cleaning up
 	 * armorstands left over by previous bugs/crashes/whatever. Do not use to identify hitboxes normally!
@@ -323,5 +339,5 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		result.setContents(contentsArray);
 		return result;
 	}
-
+	
 }
