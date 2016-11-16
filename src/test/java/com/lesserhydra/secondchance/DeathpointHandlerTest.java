@@ -1,91 +1,75 @@
 package com.lesserhydra.secondchance;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
-import java.util.UUID;
-import org.bukkit.Bukkit;
+import com.lesserhydra.secondchance.compat.Compat;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
+import com.lesserhydra.testing.FakeBukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.SimplePluginManager;
-import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitTask;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.*;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
-import com.lesserhydra.secondchance.compat.Compat;
-import com.lesserhydra.secondchance.configuration.ConfigOptions;
-import com.lesserhydra.testing.TestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({WorldHandler.class, Bukkit.class, SaveHandler.class})
-@PowerMockIgnore("javax.management.*")
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class DeathpointHandlerTest {
 	
 	private SecondChance mockPlugin;
-	private SaveHandler fakeSaveHandler = new MapSaveHandler();
+	private SaveHandler fakeSaveHandler;
 	private DeathpointHandler deathpointHandler;
 	
-	@Before public void init() throws Exception {
-		PowerMockito.mockStatic(Bukkit.class, SaveHandler.class);
-		
-		//Scheduler and server
-		BukkitScheduler mockScheduler = mock(BukkitScheduler.class);
-		when(mockScheduler.runTaskTimer(any(Plugin.class), any(Runnable.class), anyLong(), anyLong())).thenReturn(mock(BukkitTask.class));
-		Server mockServer = mock(Server.class);
-		when(mockServer.getPluginManager()).thenReturn(new SimplePluginManager(mockServer, new SimpleCommandMap(mockServer)));
-		BDDMockito.given(Bukkit.getScheduler()).willReturn(mockScheduler);
-		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
-		//Inventory creation
-		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(TestUtils::createMockInventory);
+	@BeforeClass public static void beforeAll() {
+		FakeBukkit.setup();
+	}
+	
+	@Before public void init() {
+		FakeBukkit.clear();
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
 		Whitebox.setInternalState(SecondChance.class, SecondChance.class, mockPlugin);
 		Whitebox.setInternalState(mockPlugin, Compat.class, new TestCompat());
+		
+		fakeSaveHandler = new MapSaveHandler();
 		when(mockPlugin.getSaveHandler()).thenReturn(fakeSaveHandler);
 		
-		//Instantiate deathpoint handler
 		deathpointHandler = new DeathpointHandler(mockPlugin);
 	}
 	
 	//Test hitbox creation/destruction
 	@Test public void hitboxHandling() {
-		World mockWorld1 = mockBukkitWorld("world1");
-		World mockWorld2 = mockBukkitWorld("world2");
-		BDDMockito.given(Bukkit.getWorlds()).willReturn(Arrays.asList(mockWorld1, mockWorld2));
+		World mockWorld1 = FakeBukkit.makeWorld("world1");
+		World mockWorld2 = FakeBukkit.makeWorld("world2");
 		
-		Player mockPlayer = mock(Player.class);
-		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
+		Player mockPlayer = FakeBukkit.makePlayer("player");
 		Deathpoint point1 = new Deathpoint(mockPlayer, new Location(mockWorld1, 0, 0, 0), null, 0, -1, -1L);
 		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0, -1, -1L);
 		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0, -1, -1L);
 		
 		fakeSaveHandler.save(mockWorld1, Arrays.asList(point1, point2));
-		fakeSaveHandler.save(mockWorld2, Arrays.asList(point3));
+		fakeSaveHandler.save(mockWorld2, Collections.singletonList(point3));
 		
 		//When plugin is loaded (and chunks are loaded)
 		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
@@ -140,28 +124,26 @@ public class DeathpointHandlerTest {
 	@Test public void itemHandling() {
 		/*----------Given----------*/
 		//Items
-		ItemStack[] items = {new ItemStack(Material.DIAMOND_SWORD), new ItemStack(Material.APPLE), new ItemStack(Material.TORCH),
-				new ItemStack(Material.GOLD_NUGGET), new ItemStack(Material.WRITTEN_BOOK)};
+		final ItemStack SWORD = new ItemStack(Material.DIAMOND_SWORD);
+		final ItemStack APPLE = new ItemStack(Material.APPLE);
+		final ItemStack TORCH = new ItemStack(Material.TORCH);
+		final ItemStack GUIDE_BOOK = new ItemStack(Material.WRITTEN_BOOK);
+		final ItemStack HEAD_DROP = new ItemStack(Material.SKULL_ITEM);
 		
-		World mockWorld = mockBukkitWorld("world");
+		World mockWorld = FakeBukkit.makeWorld("world");
 		when(mockWorld.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
-		BDDMockito.given(Bukkit.getWorlds()).willReturn(Arrays.asList(mockWorld));
+		
 		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
 		
 		//Player
-		Player mockPlayer = mock(Player.class);
-		when(mockPlayer.getName()).thenReturn("TestPlayer1");
-		when(mockPlayer.getUniqueId()).thenReturn(UUID.randomUUID());
-		when(mockPlayer.getWorld()).thenReturn(mockWorld);
+		Player mockPlayer = FakeBukkit.makePlayer("TestPlayer1", new Location(mockWorld, 0, 0, 0));
 		when(mockPlayer.hasPermission(eq(SecondChance.enabledPermission))).thenReturn(true);
-		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(mockPlugin, new Location(mockWorld, 10, 60, -10))));
-		PlayerInventory mockInventory = mock(PlayerInventory.class);
-		when(mockPlayer.getInventory()).thenReturn(mockInventory);
+		when(mockPlayer.getMetadata("lastSafePosition")).thenReturn(Collections.singletonList(new FixedMetadataValue(mockPlugin, new Location(mockWorld, 10, 60, -10))));
 		
 		//Book is kept from dropping by another plugin
-		when(mockInventory.getContents()).thenReturn(Arrays.copyOf(new ItemStack[]{items[0], items[1], items[4], items[2]}, 41));
-		//Gold is added by another plugin
-		List<ItemStack> drops = new ArrayList<>(Arrays.asList(items[0], items[1], items[2], items[3]));
+		mockPlayer.getInventory().setContents(new ItemStack[]{SWORD, APPLE, GUIDE_BOOK, TORCH});
+		//Head is added by another plugin (as a reward for killer, or something)
+		List<ItemStack> drops = new ArrayList<>(Arrays.asList(SWORD, APPLE, TORCH, HEAD_DROP));
 		
 		/*----------When----------*/
 		//Send event
@@ -173,19 +155,20 @@ public class DeathpointHandlerTest {
 		/*----------Then----------*/
 		Deque<Deathpoint> resultingDeathpoints = fakeSaveHandler.load(mockWorld);
 		
-		//Gold (only) should still drop
+		//Head (only) should still drop
 		assertEquals(1, event.getDrops().size());
-		assertEquals(items[3], event.getDrops().get(0));
+		assertEquals(HEAD_DROP, event.getDrops().get(0));
 		
 		//Should be one deathpoint
 		assertEquals(1, resultingDeathpoints.size());
 		
-		//Book and gold should not be stored
+		//Book and head should not be stored
 		Deathpoint finalDeathpoint = resultingDeathpoints.peek();
 		List<ItemStack> resultingContents = Arrays.asList(finalDeathpoint.getInventory().getContents());
-		assertTrue(resultingContents.containsAll(Arrays.asList(items[0], items[1], items[2])));
-		assertFalse(resultingContents.contains(items[3]));
-		assertFalse(resultingContents.contains(items[4]));
+		
+		assertTrue(resultingContents.containsAll(Arrays.asList(SWORD, APPLE, TORCH)));
+		assertFalse(resultingContents.contains(HEAD_DROP));
+		assertFalse(resultingContents.contains(GUIDE_BOOK));
 	}
 	
 }

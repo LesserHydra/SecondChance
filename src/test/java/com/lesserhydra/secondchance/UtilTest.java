@@ -10,7 +10,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Horse;
 import org.bukkit.entity.Player;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,8 +64,8 @@ public class UtilTest {
 		assertEquals(location.getBlock(), safeLocation.getBlock());
 	}
 	
-	@Test public void safeLocation_HorseOpen() {
-		//Riding a horse in the open
+	@Test public void safeLocation_MountedInOpen() {
+		//Riding a mount in the open
 		/*----------Given----------*/
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
@@ -75,15 +74,15 @@ public class UtilTest {
 		feetBlock.getRelative(BlockFace.DOWN).setType(Material.AIR);
 		feetBlock.getRelative(BlockFace.DOWN, 2).setType(Material.STONE);
 		
-		Horse horse = mock(Horse.class);
-		when(horse.isOnGround()).thenReturn(true);
-		when(horse.getLocation()).thenReturn(location.clone().add(0, -1, 0));
+		Entity mount = mock(Entity.class);
+		when(mount.isOnGround()).thenReturn(true);
+		when(mount.getLocation()).thenReturn(location.clone().add(0, -1, 0));
 		
 		Player player = mock(Player.class);
 		when(((Entity)player).isOnGround()).thenReturn(false);
 		when(player.getLocation()).thenReturn(location);
 		when(player.isInsideVehicle()).thenReturn(true);
-		when(player.getVehicle()).thenReturn(horse);
+		when(player.getVehicle()).thenReturn(mount);
 		
 		/*----------When----------*/
 		Location safeLocation = Util.entityLocationIsSafe(player);
@@ -93,8 +92,8 @@ public class UtilTest {
 		assertEquals(location.getBlock().getRelative(BlockFace.DOWN), safeLocation.getBlock());
 	}
 	
-	@Test public void safeLocation_HorseInGrass() {
-		//Riding a horse in the open
+	@Test public void safeLocation_MountedInGrass() {
+		//Riding a mount in the open
 		/*----------Given----------*/
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
@@ -103,15 +102,15 @@ public class UtilTest {
 		feetBlock.getRelative(BlockFace.DOWN).setType(Material.LONG_GRASS);
 		feetBlock.getRelative(BlockFace.DOWN, 2).setType(Material.STONE);
 		
-		Horse horse = mock(Horse.class);
-		when(horse.isOnGround()).thenReturn(true);
-		when(horse.getLocation()).thenReturn(location.clone().add(0, -1, 0));
+		Entity mount = mock(Entity.class);
+		when(mount.isOnGround()).thenReturn(true);
+		when(mount.getLocation()).thenReturn(location.clone().add(0, -1, 0));
 		
 		Player player = mock(Player.class);
 		when(((Entity)player).isOnGround()).thenReturn(false);
 		when(player.getLocation()).thenReturn(location);
 		when(player.isInsideVehicle()).thenReturn(true);
-		when(player.getVehicle()).thenReturn(horse);
+		when(player.getVehicle()).thenReturn(mount);
 		
 		/*----------When----------*/
 		Location safeLocation = Util.entityLocationIsSafe(player);
@@ -121,8 +120,8 @@ public class UtilTest {
 		assertEquals(location.getBlock().getRelative(BlockFace.DOWN), safeLocation.getBlock());
 	}
 	
-	@Test public void safeLocation_HorseInWater() {
-		//Riding a horse in the open
+	@Test public void safeLocation_MountedInWater() {
+		//Riding a mount in the open
 		/*----------Given----------*/
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
@@ -131,15 +130,15 @@ public class UtilTest {
 		feetBlock.getRelative(BlockFace.DOWN).setType(Material.STATIONARY_WATER);
 		feetBlock.getRelative(BlockFace.DOWN, 2).setType(Material.STONE);
 		
-		Horse horse = mock(Horse.class);
-		when(horse.isOnGround()).thenReturn(true);
-		when(horse.getLocation()).thenReturn(location.clone().add(0, -1, 0));
+		Entity mount = mock(Entity.class);
+		when(mount.isOnGround()).thenReturn(true);
+		when(mount.getLocation()).thenReturn(location.clone().add(0, -1, 0));
 		
 		Player player = mock(Player.class);
 		when(((Entity)player).isOnGround()).thenReturn(false);
 		when(player.getLocation()).thenReturn(location);
 		when(player.isInsideVehicle()).thenReturn(true);
-		when(player.getVehicle()).thenReturn(horse);
+		when(player.getVehicle()).thenReturn(mount);
 		
 		/*----------When----------*/
 		Location safeLocation = Util.entityLocationIsSafe(player);
@@ -193,9 +192,9 @@ public class UtilTest {
 		/*----------Given----------*/
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
-		feetBlock.setType(Material.STATIONARY_LAVA);
+		feetBlock.setType(Material.AIR);
 		feetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
-		feetBlock.getRelative(BlockFace.DOWN).setType(Material.STONE);
+		feetBlock.getRelative(BlockFace.DOWN).setType(Material.AIR);
 		
 		Player player = mock(Player.class);
 		when(((Entity)player).isOnGround()).thenReturn(true);

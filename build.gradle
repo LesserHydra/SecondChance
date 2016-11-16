@@ -35,6 +35,7 @@ dependencies {
   testCompile 'org.powermock:powermock-api-mockito:1.6.+'
   testCompile 'org.powermock:powermock-module-junit4:1.6.+'
   testCompile 'org.mockito:mockito-all:1.10.+'
+  testCompile 'org.bukkit:craftbukkit:1.10.2-R0.1-SNAPSHOT'
 }
 
 //Add compatibility modules to jar
@@ -53,8 +54,8 @@ processResources {
   ])
 }
 
-String generateVersion(workingVersion) {
-  Grgit repo = Grgit.open(project.file('.'))
+static String generateVersion(workingVersion) {
+  Grgit repo = Grgit.open()
   Tag currentTag = repo.tag.list().find {it.commit == repo.head()}
 
   if (currentTag == null) return workingVersion + '-SNAPSHOT'
