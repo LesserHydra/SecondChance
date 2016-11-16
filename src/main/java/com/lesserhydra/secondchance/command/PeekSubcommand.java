@@ -1,18 +1,12 @@
 package com.lesserhydra.secondchance.command;
 
-import com.lesserhydra.bukkitutil.ItemStackUtils;
 import com.lesserhydra.secondchance.Deathpoint;
 import com.lesserhydra.secondchance.SecondChance;
 import com.lesserhydra.secondchance.WorldHandler;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.Arrays;
 
 class PeekSubcommand implements Subcommand {
 	

@@ -1,15 +1,19 @@
 package com.lesserhydra.secondchance.command;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.lesserhydra.secondchance.SecondChance;
+import com.lesserhydra.util.MapBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import com.lesserhydra.secondchance.SecondChance;
-import com.lesserhydra.util.MapBuilder;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MainCommand implements TabCompleter, CommandExecutor {
 	
