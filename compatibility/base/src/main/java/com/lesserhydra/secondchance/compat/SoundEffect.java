@@ -8,16 +8,16 @@ import org.bukkit.entity.Player;
  */
 public interface SoundEffect {
 	
-	public void run(Location deathpointLocation, Player owner);
+	void run(Location deathpointLocation, Player owner);
 	
-	public boolean isEnabled();
+	boolean isEnabled();
 	
-	public String getSound();
+	String getSound();
 	
-	public float getVolume();
+	float getVolume();
 	
-	public float getPitch();
+	float getPitch();
 	
-	public boolean isDirect();
+	boolean isDirect();
 	
 }

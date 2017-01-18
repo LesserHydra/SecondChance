@@ -14,7 +14,7 @@ public interface Compat {
 	 * Returns the version of the implementation.
 	 * @return The version of the implementation
 	 */
-	public String getVersion();
+	String getVersion();
 	
 	/**
 	 * Combines a player's entire inventory contents into an array.
@@ -22,7 +22,7 @@ public interface Compat {
 	 * @param inventory Player's inventory
 	 * @return Array containing entire contents
 	 */
-	public ItemStack[] inventoryContents(PlayerInventory inventory);
+	ItemStack[] inventoryContents(PlayerInventory inventory);
 	
 	/**
 	 * Checks if an armorstand was spawned for hitbox use. This is meant to be used as a safety net in cleaning up
@@ -30,14 +30,14 @@ public interface Compat {
 	 * @param entity Armorstand to check
 	 * @return Whether armorstand was used as a hitbox
 	 */
-	public boolean armorstandIsHitbox(ArmorStand entity);
+	boolean armorstandIsHitbox(ArmorStand entity);
 	
 	/**
 	 * Spawns in an armorstand to use as a hitbox. The returned armorstand can be identified by {@link #armorstandIsHitbox}.
 	 * @param location Location to spawn hitbox at
 	 * @return The resulting armorstand
 	 */
-	public ArmorStand spawnHitbox(Location location);
+	ArmorStand spawnHitbox(Location location);
 	
 	/**
 	 * Constructs a version specific {@link SoundEffect}.
@@ -48,7 +48,7 @@ public interface Compat {
 	 * @param direct Whether sound is direct
 	 * @return The resulting {@link SoundEffect}
 	 */
-	public SoundEffect makeSoundEffect(boolean enabled, String sound, float volume, float pitch, boolean direct);
+	SoundEffect makeSoundEffect(boolean enabled, String sound, float volume, float pitch, boolean direct);
 	
 	/**
 	 * Constructs a version specific {@link ParticleEffect}.
@@ -59,6 +59,6 @@ public interface Compat {
 	 * @param ownerOnly Whether only the deathpoint owner should see the effect
 	 * @return The resulting {@link ParticleEffect}
 	 */
-	public ParticleEffect makeParticleEffect(String particleName, int amount, double spread, double speed, boolean ownerOnly);
+	ParticleEffect makeParticleEffect(String particleName, int amount, double spread, double speed, boolean ownerOnly);
 	
 }

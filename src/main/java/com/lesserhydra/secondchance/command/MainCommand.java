@@ -37,11 +37,11 @@ public class MainCommand implements TabCompleter, CommandExecutor {
 		}
 		
 		//No subcommand given
-		if (args.length == 0) return false;
+		if (args.length == 0) return false; //TODO: help
 		
 		//Subcommand
 		Subcommand sub = subcommands.get(args[0].toLowerCase());
-		if (sub == null) return false; //Invalid
+		if (sub == null) return false; //TODO: help
 		sub.execute(sender, command, alias, getSubcommandArgs(args));
 		return true;
 	}

@@ -8,16 +8,16 @@ import org.bukkit.entity.Player;
  */
 public interface ParticleEffect {
 	
-	public void run(Location deathpointLocation, Player owner);
+	void run(Location deathpointLocation, Player owner);
 
-	public String getName();
+	String getName();
 
-	public int getAmount();
+	int getAmount();
 
-	public double getSpread();
+	double getSpread();
 
-	public double getSpeed();
+	double getSpeed();
 
-	public boolean isOwnerOnly();
+	boolean isOwnerOnly();
 
 }

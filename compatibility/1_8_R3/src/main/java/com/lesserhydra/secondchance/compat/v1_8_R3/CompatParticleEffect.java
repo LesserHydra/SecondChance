@@ -31,7 +31,7 @@ public class CompatParticleEffect extends BaseParticleEffect {
 	
 	@Override
 	protected void runForPlayer(Location location, Player owner) {
-		if (owner == null) return;
+		if (owner == null || owner.getWorld() != location.getWorld()) return;
 		
         double x = location.getX();
         double y = location.getY();

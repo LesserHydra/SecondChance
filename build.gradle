@@ -3,7 +3,6 @@ plugins {
 }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
 
 import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens

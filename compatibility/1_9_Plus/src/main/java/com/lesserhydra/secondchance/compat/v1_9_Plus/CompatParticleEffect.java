@@ -22,7 +22,7 @@ public class CompatParticleEffect extends BaseParticleEffect {
 	
 	@Override
 	protected void runForPlayer(Location location, Player owner) {
-		if (owner == null) return;
+		if (owner == null || owner.getWorld() != location.getWorld()) return;
 		owner.spawnParticle(type, location, amount, spread, spread, spread, speed);
 	}
 	
