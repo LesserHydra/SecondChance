@@ -265,12 +265,21 @@ class DeathpointHandler implements Listener {
 	}
 	
 	private Location getSafePosition(Player player) {
+		//Current loc is good
+		Location safeLoc = Util.entityLocationIsSafe(player);
+		if (safeLoc != null) return normalizeDeathpointLocation(safeLoc);
+		
+		//Else, get last known safe location from metadata
 		Location loc = (Location) player.getMetadata("lastSafePosition").stream()
 				.filter(value -> value.getOwningPlugin() == plugin)
 				.findFirst()
-				//Use player location if safe location doesn't exist for some reason
+				//Fallback
 				.orElseGet(() -> new FixedMetadataValue(plugin, player.getLocation()))
 				.value();
+		return normalizeDeathpointLocation(loc);
+	}
+	
+	private Location normalizeDeathpointLocation(Location loc) {
 		return new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() + 1, loc.getBlockZ() + 0.5);
 	}
 	
