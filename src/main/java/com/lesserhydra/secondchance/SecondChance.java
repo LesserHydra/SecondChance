@@ -7,8 +7,6 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import com.lesserhydra.secondchance.command.MainCommand;
-import com.lesserhydra.secondchance.compat.Compat;
-import com.lesserhydra.secondchance.compat.CompatHandler;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 
 public class SecondChance extends JavaPlugin {
@@ -33,18 +31,11 @@ public class SecondChance extends JavaPlugin {
 	private final File saveFolder = new File(getDataFolder() + File.separator + "saves");
 	private final SaveHandler saveHandler = new YAMLSaveHandler(saveFolder);
 	private final DeathpointHandler deathpointHandler = new DeathpointHandler(this);
-	private Compat compat;
 	
 	
 	@Override
 	public void onEnable() {
 		plugin = this;
-		
-		//Get compatibility functionality for version
-        String packageName = this.getServer().getClass().getPackage().getName();
-        String version = packageName.substring(packageName.lastIndexOf('.') + 1);
-		compat = CompatHandler.getVersion(version);
-		getLogger().info("Found version \'" + version + "\'; using " + compat.getVersion() + " compatibility.");
 		
 		//Register permissions
 		getServer().getPluginManager().addPermission(enabledPermission);
@@ -105,8 +96,4 @@ public class SecondChance extends JavaPlugin {
 		return plugin;
 	}
 	
-	public static Compat compat() {
-		return plugin.compat;
-	}
-
 }

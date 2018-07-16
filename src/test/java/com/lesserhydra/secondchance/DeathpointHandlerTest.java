@@ -1,6 +1,5 @@
 package com.lesserhydra.secondchance;
 
-import com.lesserhydra.secondchance.compat.Compat;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.FakeBukkit;
 import org.bukkit.Bukkit;
@@ -52,7 +51,6 @@ public class DeathpointHandlerTest {
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
 		Whitebox.setInternalState(SecondChance.class, SecondChance.class, mockPlugin);
-		Whitebox.setInternalState(mockPlugin, new TestCompat());
 		Whitebox.setInternalState(mockPlugin, "isEnabled", true);
 		
 		fakeSaveHandler = new MapSaveHandler();

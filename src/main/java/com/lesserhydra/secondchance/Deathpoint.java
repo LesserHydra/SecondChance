@@ -9,8 +9,11 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -28,6 +31,9 @@ import com.lesserhydra.bukkitutil.ItemStackUtils;
 public class Deathpoint implements InventoryHolder, ConfigurationSerializable, Cloneable {
 	
 	private static final int INV_SIZE = 45; //Must be a multiple of 9, and at least 45
+	
+	private static final UUID HITBOX_ATTRIBUTE_UUID = UUID.fromString("f36fe1df-0036-475c-9f5a-52b95af83c96");
+	private static final String HITBOX_ATTRIBUTE_STRING = "isSecondChanceHitbox";
 	
 	private final UUID ownerUniqueId;
 	private final Location location;
@@ -134,7 +140,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		if (invalid || hitbox != null) return;
 		if (!location.getChunk().isLoaded()) return;
 		
-		hitbox = SecondChance.compat().spawnHitbox(location);
+		hitbox = spawnHitbox(location);
 		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.instance(), this));
 	}
 	
@@ -202,8 +208,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * @return True if no items are contained
 	 */
 	public boolean isEmpty() {
-		return !Arrays.stream(inventory.getContents())
-				.anyMatch(ItemStackUtils::isValid);
+		return Arrays.stream(inventory.getContents())
+				.noneMatch(ItemStackUtils::isValid);
 	}
 	
 	/**
@@ -323,7 +329,22 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 * @return Whether armorstand was used as a hitbox
 	 */
 	public static boolean armorstandIsHitbox(ArmorStand entity) {
-		return SecondChance.compat().armorstandIsHitbox(entity);
+		return entity.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers().stream()
+				.filter(mod -> HITBOX_ATTRIBUTE_UUID.equals(mod.getUniqueId()))
+				.anyMatch(mod -> HITBOX_ATTRIBUTE_STRING.equals(mod.getName()));
+	}
+	
+	private static ArmorStand spawnHitbox(Location location) {
+		Location standLoc = location.clone().add(0, -0.75, 0);
+		ArmorStand hitbox = (ArmorStand) location.getWorld().spawnEntity(standLoc, EntityType.ARMOR_STAND);
+		hitbox.setGravity(false);
+		hitbox.setVisible(false);
+		
+		//Add attribute for identifying in case of persistance (Fallback, not relied upon for normal operation)
+		hitbox.getAttribute(Attribute.GENERIC_MAX_HEALTH)
+				.addModifier(new AttributeModifier(HITBOX_ATTRIBUTE_UUID, HITBOX_ATTRIBUTE_STRING, 0, AttributeModifier.Operation.ADD_NUMBER));
+		
+		return hitbox;
 	}
 	
 	private Inventory createInventory(ItemStack[] items) {

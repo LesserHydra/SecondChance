@@ -1,7 +1,6 @@
 package com.lesserhydra.secondchance;
 
 import com.lesserhydra.secondchance.command.MainCommand;
-import com.lesserhydra.secondchance.compat.Compat;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.FakeBukkit;
 import org.bukkit.Location;
@@ -76,7 +75,6 @@ public class PermissionsTest {
 		//Mock plugin setup
 		plugin = spy(Whitebox.newInstance(SecondChance.class));
 		Whitebox.setInternalState(SecondChance.class, plugin);
-		Whitebox.setInternalState(plugin, new TestCompat());
 		Whitebox.setInternalState(plugin, "isEnabled", true);
 		doReturn(new YamlConfiguration()).when(plugin).getConfig();
 		doNothing().when(plugin).reload();

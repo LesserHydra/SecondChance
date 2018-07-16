@@ -141,7 +141,7 @@ class DeathpointHandler implements Listener {
 		ItemStack[] itemsToHold = null;
 		if (options.holdItems && !event.getKeepInventory()) {
 			//Store all inventory items that have been dropped, and remove from drops
-			itemsToHold = SecondChance.compat().inventoryContents(player.getInventory());
+			itemsToHold = player.getInventory().getContents();
 			for (int i = 0; i < itemsToHold.length; i++) {
 				boolean wasRemoved = event.getDrops().remove(itemsToHold[i]);
 				if (!wasRemoved) itemsToHold[i] = null;

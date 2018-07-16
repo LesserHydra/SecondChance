@@ -49,7 +49,7 @@ public class WorldHandler {
 		world.getEntities().stream()
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
-				.filter(SecondChance.compat()::armorstandIsHitbox)
+				.filter(Deathpoint::armorstandIsHitbox)
 				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
 				.forEach(Entity::remove);
 		
@@ -82,8 +82,7 @@ public class WorldHandler {
 		if (ambientSoundTask != null) ambientSoundTask.cancel();
 		if (timeCheckTask != null) timeCheckTask.cancel();
 		//Despawn hitboxes
-		worldDeathpoints.stream()
-				.forEach(Deathpoint::despawnHitbox);
+		worldDeathpoints.forEach(Deathpoint::despawnHitbox);
 		//Save
 		plugin.getSaveHandler().save(world, worldDeathpoints);
 		//Clear members
@@ -100,7 +99,7 @@ public class WorldHandler {
 		Arrays.stream(chunk.getEntities())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
-				.filter(SecondChance.compat()::armorstandIsHitbox)
+				.filter(Deathpoint::armorstandIsHitbox)
 				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
 				.forEach(Entity::remove);
 		
@@ -121,15 +120,13 @@ public class WorldHandler {
 		plugin.getSaveHandler().save(world, worldDeathpoints);
 		
 		//Despawn hitboxes
-		worldDeathpoints.stream()
-				.forEachOrdered(Deathpoint::despawnHitbox);
+		worldDeathpoints.forEach(Deathpoint::despawnHitbox);
 		
 		//Schedule hitbox respawn
 		final UUID worldUUID = world.getUID();
 		Bukkit.getScheduler().runTaskLater(plugin, () -> {
 			if (Bukkit.getWorld(worldUUID) == null) return;
-			worldDeathpoints.stream()
-					.forEach(Deathpoint::spawnHitbox);
+			worldDeathpoints.forEach(Deathpoint::spawnHitbox);
 		}, 1);
 	}
 	
