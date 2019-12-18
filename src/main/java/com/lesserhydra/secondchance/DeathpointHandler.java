@@ -206,6 +206,7 @@ class DeathpointHandler implements Listener {
 		event.setCancelled(true);
 		
 		Player player = event.getPlayer();
+		if (player.getOpenInventory().getTopInventory() == deathpoint.getInventory()) return;
 		
 		//Deathpoint is protected
 		if (options.isProtected && !player.hasPermission(SecondChance.thiefPermission)
