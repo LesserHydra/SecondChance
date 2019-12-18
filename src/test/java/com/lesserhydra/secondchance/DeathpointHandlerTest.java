@@ -3,6 +3,7 @@ package com.lesserhydra.secondchance;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.FakeBukkit;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -79,7 +80,7 @@ public class DeathpointHandlerTest {
 	//World is enabled, make deathpoint
 	@Test public void worldEnabled() {
 		World world = FakeBukkit.makeWorld("world");
-		when(world.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
+		when(world.getGameRuleValue(eq(GameRule.KEEP_INVENTORY))).thenReturn(false);
 		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
 		
 		Player player = FakeBukkit.makePlayer("Billy Bob", new Location(world, 0, 0, 0));
@@ -104,7 +105,7 @@ public class DeathpointHandlerTest {
 	//World is disabled, no deathpoint
 	@Test public void worldDisabled() {
 		World disabledWorld = FakeBukkit.makeWorld("creative_world");
-		when(disabledWorld.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
+		when(disabledWorld.getGameRuleValue(eq(GameRule.KEEP_INVENTORY))).thenReturn(false);
 		
 		ConfigOptions options = new ConfigOptions(new YamlConfiguration());
 		Whitebox.setInternalState(options, Collections.singleton("creative_world"));
@@ -140,7 +141,7 @@ public class DeathpointHandlerTest {
 		final ItemStack HEAD_DROP = new ItemStack(Material.PLAYER_HEAD);
 		
 		World mockWorld = FakeBukkit.makeWorld("world");
-		when(mockWorld.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
+		when(mockWorld.getGameRuleValue(eq(GameRule.KEEP_INVENTORY))).thenReturn(false);
 		
 		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
 		

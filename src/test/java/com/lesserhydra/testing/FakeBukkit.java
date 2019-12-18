@@ -19,7 +19,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.SimplePluginManager;
 import org.mockito.invocation.InvocationOnMock;
@@ -56,6 +55,7 @@ public class FakeBukkit {
 		Server server = PowerMockito.mock(Server.class, withSettings().defaultAnswer(RETURNS_SMART_NULLS));
 		Whitebox.setInternalState(Bukkit.class, server);
 		when(server.getPluginManager()).thenReturn(new SimplePluginManager(server, new SimpleCommandMap(server)));
+		//noinspection deprecation
 		when(server.getUnsafe()).thenReturn(CraftMagicNumbers.INSTANCE);
 		when(server.getItemFactory()).thenReturn(CraftItemFactory.instance());
 		when(server.getScheduler()).thenReturn(new CraftScheduler());

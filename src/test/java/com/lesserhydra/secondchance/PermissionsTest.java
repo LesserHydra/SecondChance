@@ -3,6 +3,7 @@ package com.lesserhydra.secondchance;
 import com.lesserhydra.secondchance.command.MainCommand;
 import com.lesserhydra.secondchance.configuration.ConfigOptions;
 import com.lesserhydra.testing.FakeBukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -105,7 +106,7 @@ public class PermissionsTest {
 		
 		//Mock world and players
 		world = FakeBukkit.makeWorld("world");
-		when(world.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
+		when(world.getGameRuleValue(eq(GameRule.KEEP_INVENTORY))).thenReturn(false);
 		
 		player1 = FakeBukkit.makePlayer("Joe", new Location(world, 0, 0, 0));
 		Player player2 = FakeBukkit.makePlayer("Bob", new Location(world, 0, 0, 0));

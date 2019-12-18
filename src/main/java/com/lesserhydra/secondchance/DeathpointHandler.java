@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
@@ -127,7 +128,7 @@ class DeathpointHandler implements Listener {
 		if (options.isWorldDisabled(player.getWorld())) return;
 		
 		//KeepInventory seems to override all event settings (SPIGOT-2222)
-		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
+		if (player.getWorld().getGameRuleValue(GameRule.KEEP_INVENTORY)) return;
 		
 		//Destroy old deathpoint(s)
 		if (options.deathsTillForget > 0) worlds.values().forEach(handler -> handler.updateDeathsTillForget(player));
