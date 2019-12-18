@@ -139,7 +139,6 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	void spawnHitbox() {
 		if (invalid || hitbox != null) return;
 		if (!getWorld().isChunkLoaded(getChunkX(), getChunkZ())) return;
-		if (!location.getChunk().isLoaded()) return;
 		
 		hitbox = spawnHitbox(location);
 		hitbox.setMetadata("deathpoint", new FixedMetadataValue(SecondChance.instance(), this));
@@ -171,6 +170,13 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	boolean updateTicksTillForget(long ticks) {
 		ticksTillForget -= ticks;
 		return (ticksTillForget < 1);
+	}
+	
+	/**
+	 * Invalidates this deathpoint, ensuring it will not spawn its hitbox
+	 */
+	void invalidate() {
+		invalid = true;
 	}
 	
 	/**
@@ -349,7 +355,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		hitbox.setGravity(false);
 		hitbox.setVisible(false);
 		
-		//Add attribute for identifying in case of persistance (Fallback, not relied upon for normal operation)
+		//Add attribute for identifying in case of persistence (Fallback, not relied upon for normal operation)
 		hitbox.getAttribute(Attribute.GENERIC_MAX_HEALTH)
 				.addModifier(new AttributeModifier(HITBOX_ATTRIBUTE_UUID, HITBOX_ATTRIBUTE_STRING, 0, AttributeModifier.Operation.ADD_NUMBER));
 		

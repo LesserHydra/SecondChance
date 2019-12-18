@@ -11,6 +11,7 @@ import org.bukkit.World;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.v1_14_R1.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
@@ -54,6 +55,7 @@ public class FakeBukkit {
 		Server server = PowerMockito.mock(Server.class, withSettings().defaultAnswer(RETURNS_SMART_NULLS));
 		Whitebox.setInternalState(Bukkit.class, server);
 		when(server.getPluginManager()).thenReturn(new SimplePluginManager(server, new SimpleCommandMap(server)));
+		//noinspection deprecation
 		when(server.getUnsafe()).thenReturn(CraftMagicNumbers.INSTANCE);
 		when(server.getItemFactory()).thenReturn(CraftItemFactory.instance());
 		when(server.getScheduler()).thenReturn(new CraftScheduler());
@@ -95,6 +97,11 @@ public class FakeBukkit {
 		when(result.getType()).thenReturn(EntityType.PLAYER);
 		when(result.getLocation()).thenReturn(location);
 		when(result.getWorld()).thenReturn(location.getWorld());
+		
+		Capsule<Inventory> topInventory = new Capsule<>();
+		when(result.getOpenInventory()).thenAnswer(i -> new CraftInventoryView(result, topInventory.get(), null));
+		doAnswer(i -> topInventory.set((Inventory) i.getArguments()[0])).when(result).openInventory(any(Inventory.class));
+		doAnswer(i -> topInventory.set(null)).when(result).closeInventory();
 		
 		EntityHuman human = mock(EntityHuman.class);
 		when(human.getBukkitEntity()).thenReturn(result);

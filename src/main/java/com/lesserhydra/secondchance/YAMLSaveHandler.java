@@ -2,8 +2,8 @@ package com.lesserhydra.secondchance;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import org.bukkit.World;
@@ -39,7 +39,7 @@ class YAMLSaveHandler implements SaveHandler {
 		
 		YamlConfiguration save = YamlConfiguration.loadConfiguration(file);
 		Deque<Deathpoint> results = new LinkedList<>();
-		save.getList(SAVE_SECTION, Arrays.asList()).stream()
+		save.getList(SAVE_SECTION, Collections.emptyList()).stream()
 				.filter(obj -> (obj instanceof Deathpoint))
 				.map(point -> (Deathpoint) point)
 				.forEachOrdered(results::add);
