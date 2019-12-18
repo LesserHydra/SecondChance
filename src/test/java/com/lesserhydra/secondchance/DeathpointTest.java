@@ -1,6 +1,7 @@
 package com.lesserhydra.secondchance;
 
 import com.lesserhydra.testing.FakeBukkit;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -38,8 +39,8 @@ public class DeathpointTest {
 		Player player2 = FakeBukkit.makePlayer("Alex");
 		
 		//Create deathpoints
-		ItemStack[] inv1 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.POTATO_ITEM)}, 41);
-		ItemStack[] inv2 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.REDSTONE_LAMP_OFF, 64), new ItemStack(Material.REDSTONE)}, 41);
+		ItemStack[] inv1 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.POTATO)}, 41);
+		ItemStack[] inv2 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.REDSTONE_LAMP, 64), new ItemStack(Material.REDSTONE)}, 41);
 		ItemStack[] inv3 = new ItemStack[41];
 		Deathpoint deathpoint1 = new Deathpoint(player1, new Location(mockWorld, 0.03, 555, 10.2), inv1, 99, 3, 5000);
 		Deathpoint deathpoint2 = new Deathpoint(player2, new Location(mockWorld, 50, 404, 42), inv2, 1337, 1, -1);

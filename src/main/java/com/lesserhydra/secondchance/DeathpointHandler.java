@@ -45,11 +45,11 @@ class DeathpointHandler implements Listener {
 	private BukkitTask safeLocationTask;
 	
 	
-	public DeathpointHandler(SecondChance plugin) {
+	DeathpointHandler(SecondChance plugin) {
 		this.plugin = plugin;
 	}
 	
-	public void init(ConfigOptions options) {
+	void init(ConfigOptions options) {
 		this.options = options;
 		Bukkit.getWorlds().stream()
 				.filter(world -> !options.isWorldDisabled(world))
@@ -58,7 +58,7 @@ class DeathpointHandler implements Listener {
 				options.locationCheckDelay, options.locationCheckDelay);
 	}
 	
-	public void deinit() {
+	void deinit() {
 		//Stop safe location task
 		safeLocationTask.cancel();
 		//Deinit all remaining worlds
@@ -239,7 +239,7 @@ class DeathpointHandler implements Listener {
 		worlds.get(deathpoint.getWorld().getUID()).destroyDeathpoint(deathpoint);
 	}
 	
-	public Stream<WorldHandler> worldHandlers() {
+	Stream<WorldHandler> worldHandlers() {
 		return worlds.values().stream();
 	}
 	

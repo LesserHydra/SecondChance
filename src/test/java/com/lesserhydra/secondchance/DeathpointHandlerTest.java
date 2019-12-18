@@ -14,6 +14,8 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,7 +34,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DeathpointHandlerTest {
@@ -47,11 +48,13 @@ public class DeathpointHandlerTest {
 	
 	@Before public void init() {
 		FakeBukkit.clear();
+		if (mockPlugin != null) Bukkit.getScheduler().cancelTasks(mockPlugin);
 		
 		//Main plugin
 		mockPlugin = mock(SecondChance.class);
 		Whitebox.setInternalState(SecondChance.class, SecondChance.class, mockPlugin);
 		Whitebox.setInternalState(mockPlugin, "isEnabled", true);
+		Whitebox.setInternalState(mockPlugin, "description", new PluginDescriptionFile("SecondChance", "TEST", "com.lesserhydra.secondchance.SecondChance"));
 		
 		fakeSaveHandler = new MapSaveHandler();
 		when(mockPlugin.getSaveHandler()).thenReturn(fakeSaveHandler);
@@ -59,14 +62,18 @@ public class DeathpointHandlerTest {
 		deathpointHandler = new DeathpointHandler(mockPlugin);
 	}
 	
+	@After public void deinit() {
+		Bukkit.getScheduler().cancelTasks(mockPlugin);
+	}
+	
 	@Test public void taskCanceling() {
 		World world = FakeBukkit.makeWorld("world");
 		
 		deathpointHandler.init(new ConfigOptions(new YamlConfiguration()));
-		assertFalse(Bukkit.getScheduler().getPendingTasks().isEmpty());
+		assertFalse(Bukkit.getScheduler().getPendingTasks().stream().noneMatch(t -> t.getOwner() == mockPlugin));
 		
 		deathpointHandler.deinit();
-		assertTrue(Bukkit.getScheduler().getPendingTasks().isEmpty());
+		assertTrue(Bukkit.getScheduler().getPendingTasks().stream().noneMatch(t -> t.getOwner() == mockPlugin));
 	}
 	
 	//World is enabled, make deathpoint
@@ -130,7 +137,7 @@ public class DeathpointHandlerTest {
 		final ItemStack APPLE = new ItemStack(Material.APPLE);
 		final ItemStack TORCH = new ItemStack(Material.TORCH);
 		final ItemStack GUIDE_BOOK = new ItemStack(Material.WRITTEN_BOOK);
-		final ItemStack HEAD_DROP = new ItemStack(Material.SKULL_ITEM);
+		final ItemStack HEAD_DROP = new ItemStack(Material.PLAYER_HEAD);
 		
 		World mockWorld = FakeBukkit.makeWorld("world");
 		when(mockWorld.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
@@ -183,6 +190,14 @@ public class DeathpointHandlerTest {
 		Deathpoint point2 = new Deathpoint(mockPlayer, new Location(mockWorld1, -1, 0, -1), null, 0, -1, -1L);
 		Deathpoint point3 = new Deathpoint(mockPlayer, new Location(mockWorld2, 0, 0, 0), null, 0, -1, -1L);
 		
+		//Load chunks
+		point1.getLocation().getChunk().load();
+		point2.getLocation().getChunk().load();
+		point3.getLocation().getChunk().load();
+		assertTrue(point1.getLocation().getChunk().isLoaded());
+		assertTrue(point2.getLocation().getChunk().isLoaded());
+		assertTrue(point3.getLocation().getChunk().isLoaded());
+		
 		fakeSaveHandler.save(mockWorld1, Arrays.asList(point1, point2));
 		fakeSaveHandler.save(mockWorld2, Collections.singletonList(point3));
 		
@@ -193,36 +208,45 @@ public class DeathpointHandlerTest {
 		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
 		//When first is unloaded
+		point1.getLocation().getChunk().unload();
 		deathpointHandler.onChunkUnload(new ChunkUnloadEvent(point1.getLocation().getChunk()));
+		assertFalse(point1.getLocation().getChunk().isLoaded());
 		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
 		//When second is unloaded
+		point2.getLocation().getChunk().unload();
 		deathpointHandler.onChunkUnload(new ChunkUnloadEvent(point2.getLocation().getChunk()));
+		assertFalse(point2.getLocation().getChunk().isLoaded());
 		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
 		//When third is unloaded
+		point3.getLocation().getChunk().unload();
 		deathpointHandler.onChunkUnload(new ChunkUnloadEvent(point3.getLocation().getChunk()));
+		assertFalse(point3.getLocation().getChunk().isLoaded());
 		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
 		assertNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
 		//When third is loaded
+		point3.getLocation().getChunk().load();
 		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point3.getLocation().getChunk(), false));
 		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNull(Whitebox.getInternalState(point2, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
 		//When second is loaded
+		point2.getLocation().getChunk().load();
 		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point2.getLocation().getChunk(), false));
 		assertNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point3, ArmorStand.class));
 		
 		//When first is loaded
+		point1.getLocation().getChunk().load();
 		deathpointHandler.onChunkLoad(new ChunkLoadEvent(point1.getLocation().getChunk(), false));
 		assertNotNull(Whitebox.getInternalState(point1, ArmorStand.class));
 		assertNotNull(Whitebox.getInternalState(point2, ArmorStand.class));

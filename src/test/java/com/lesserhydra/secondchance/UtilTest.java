@@ -48,7 +48,7 @@ public class UtilTest {
 		/*----------Given----------*/
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
-		feetBlock.setType(Material.SIGN);
+		feetBlock.setType(Material.OAK_SIGN);
 		feetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
 		feetBlock.getRelative(BlockFace.DOWN).setType(Material.STONE);
 
@@ -98,8 +98,8 @@ public class UtilTest {
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
 		feetBlock.setType(Material.AIR);
-		feetBlock.getRelative(BlockFace.UP).setType(Material.LONG_GRASS);
-		feetBlock.getRelative(BlockFace.DOWN).setType(Material.LONG_GRASS);
+		feetBlock.getRelative(BlockFace.UP).setType(Material.TALL_GRASS);
+		feetBlock.getRelative(BlockFace.DOWN).setType(Material.TALL_GRASS);
 		feetBlock.getRelative(BlockFace.DOWN, 2).setType(Material.STONE);
 		
 		Entity mount = mock(Entity.class);
@@ -127,7 +127,7 @@ public class UtilTest {
 		Block feetBlock = location.getBlock();
 		feetBlock.setType(Material.AIR);
 		feetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
-		feetBlock.getRelative(BlockFace.DOWN).setType(Material.STATIONARY_WATER);
+		feetBlock.getRelative(BlockFace.DOWN).setType(Material.WATER);
 		feetBlock.getRelative(BlockFace.DOWN, 2).setType(Material.STONE);
 		
 		Entity mount = mock(Entity.class);
@@ -172,7 +172,7 @@ public class UtilTest {
 		/*----------Given----------*/
 		Location location = new Location(mockWorld, 0, 70, 0);
 		Block feetBlock = location.getBlock();
-		feetBlock.setType(Material.STATIONARY_LAVA);
+		feetBlock.setType(Material.LAVA);
 		feetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
 		feetBlock.getRelative(BlockFace.DOWN).setType(Material.STONE);
 

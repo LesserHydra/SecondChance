@@ -54,8 +54,8 @@ public abstract class FakeBlock implements Block {
 	
 	@Override
 	public boolean isLiquid() {
-		return (type == Material.WATER || type == Material.STATIONARY_WATER
-				|| type == Material.LAVA || type == Material.STATIONARY_LAVA);
+		return (type == Material.WATER
+				|| type == Material.LAVA);
 	}
 	
 }

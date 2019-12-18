@@ -138,6 +138,7 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	 */
 	void spawnHitbox() {
 		if (invalid || hitbox != null) return;
+		if (!getWorld().isChunkLoaded(getChunkX(), getChunkZ())) return;
 		if (!location.getChunk().isLoaded()) return;
 		
 		hitbox = spawnHitbox(location);
@@ -252,6 +253,14 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 		return location.clone();
 	}
 	
+	public final int getChunkX() {
+		return location.getBlockX() >> 4;
+	}
+	
+	public final int getChunkZ() {
+		return location.getBlockZ() >> 4;
+	}
+	
 	/**
 	 * Returns the world inhabited by this deathpoint.
 	 * @return The world inhabited by this deathpoint
@@ -290,8 +299,8 @@ public class Deathpoint implements InventoryHolder, ConfigurationSerializable, C
 	@Override
 	public int hashCode() {
 		return (101 * ownerUniqueId.hashCode())
-				^ (103 * location.hashCode())
-				^ (107 * creationInstant.hashCode());
+             ^ (103 * location.hashCode())
+             ^ (107 * creationInstant.hashCode());
 	}
 	
 	/**

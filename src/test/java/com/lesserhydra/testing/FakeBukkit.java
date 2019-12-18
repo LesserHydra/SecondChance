@@ -1,25 +1,25 @@
 package com.lesserhydra.testing;
 
-import net.minecraft.server.v1_10_R1.DispenserRegistry;
-import net.minecraft.server.v1_10_R1.EntityHuman;
-import net.minecraft.server.v1_10_R1.EntityPlayer;
-import net.minecraft.server.v1_10_R1.PlayerInventory;
+import net.minecraft.server.v1_14_R1.DispenserRegistry;
+import net.minecraft.server.v1_14_R1.EntityHuman;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.PlayerInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.craftbukkit.v1_10_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_10_R1.inventory.CraftInventoryPlayer;
-import org.bukkit.craftbukkit.v1_10_R1.inventory.CraftItemFactory;
-import org.bukkit.craftbukkit.v1_10_R1.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftInventoryPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.v1_14_R1.scheduler.CraftScheduler;
+import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.SimplePluginManager;
-import org.bukkit.scheduler.BukkitScheduler;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.reflect.Whitebox;
@@ -28,7 +28,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_SMART_NULLS;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 public class FakeBukkit {
 	
@@ -41,12 +48,13 @@ public class FakeBukkit {
 		done = true;
 		
 		//Initialize Minecraft stuffs
-		DispenserRegistry.c();
+		DispenserRegistry.init();
 		
 		//Setup fake server
 		Server server = PowerMockito.mock(Server.class, withSettings().defaultAnswer(RETURNS_SMART_NULLS));
 		Whitebox.setInternalState(Bukkit.class, server);
 		when(server.getPluginManager()).thenReturn(new SimplePluginManager(server, new SimpleCommandMap(server)));
+		when(server.getUnsafe()).thenReturn(CraftMagicNumbers.INSTANCE);
 		when(server.getItemFactory()).thenReturn(CraftItemFactory.instance());
 		when(server.getScheduler()).thenReturn(new CraftScheduler());
 		when(server.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(FakeBukkit::createMockInventory);
@@ -70,7 +78,6 @@ public class FakeBukkit {
 	}
 	
 	public static void clear() {
-		Bukkit.getScheduler().cancelAllTasks();
 		worlds.clear();
 		players.clear();
 	}

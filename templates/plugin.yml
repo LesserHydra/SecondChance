@@ -3,6 +3,8 @@ main: @mainClass@
 version: @version@
 author: Roboboy
 
+api-version: 1.13
+
 commands:
   SecondChance:
     aliases: [chance, sc]

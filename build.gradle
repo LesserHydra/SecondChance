@@ -8,7 +8,7 @@ import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens
 
 group = 'com.lesserhydra'
-version = generateVersion('1.0')
+version = generateVersion('1.0.1')
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
 
 allprojects {
@@ -17,13 +17,13 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven {url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'}
+    //maven {url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'}
   }
 }
 
 dependencies {
   //Bukkit api
-  compile 'org.bukkit:bukkit:1.10.2-R0.1-SNAPSHOT'
+  compile 'org.spigotmc:spigot:1.14.4-R0.1-SNAPSHOT'
   compile 'org.jetbrains:annotations:15.0'
 
   //Testing libraries
@@ -33,7 +33,6 @@ dependencies {
   testCompile 'org.powermock:powermock-api-mockito:1.6.+'
   testCompile 'org.powermock:powermock-module-junit4:1.6.+'
   testCompile 'org.mockito:mockito-all:1.10.+'
-  testCompile 'org.bukkit:craftbukkit:1.10.2-R0.1-SNAPSHOT'
 }
 
 //Generate plugin.yml

@@ -105,13 +105,13 @@ public class WorldHandler {
 		
 		//Spawn deathpoint hitboxes
 		worldDeathpoints.stream()
-				.filter((point) -> chunk.equals(point.getLocation().getChunk()))
+				.filter((point) -> chunk.getX() == point.getChunkX() && chunk.getZ() == point.getChunkZ())
 				.forEach(Deathpoint::spawnHitbox);
 	}
 	
 	void onChunkUnload(Chunk chunk) {
 		worldDeathpoints.stream()
-				.filter((point) -> chunk.equals(point.getLocation().getChunk()))
+				.filter((point) -> chunk.getX() == point.getChunkX() && chunk.getZ() == point.getChunkZ())
 				.forEach(Deathpoint::despawnHitbox);
 	}
 	
@@ -166,7 +166,7 @@ public class WorldHandler {
 	
 	private void runParticles(Deathpoint deathpoint) {
 		Location location = deathpoint.getLocation();
-		if (!location.getChunk().isLoaded()) return;
+		if (!world.isChunkLoaded(deathpoint.getChunkX(), deathpoint.getChunkZ())) return;
 		
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		options.particlePrimary.run(location, owner);
@@ -175,7 +175,7 @@ public class WorldHandler {
 	
 	private void runAmbientSound(Deathpoint deathpoint) {
 		Location location = deathpoint.getLocation();
-		if (!location.getChunk().isLoaded()) return;
+		if (!world.isChunkLoaded(deathpoint.getChunkX(), deathpoint.getChunkZ())) return;
 		
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		options.ambientSound.run(location, owner);
