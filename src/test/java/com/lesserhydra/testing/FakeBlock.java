@@ -19,16 +19,12 @@ public abstract class FakeBlock implements Block {
 	
 	public static Block mockBukkitBlock(World world, int x, int y, int z) {
 		FakeBlock fakeBlock = mock(FakeBlock.class, withSettings().defaultAnswer(CALLS_REAL_METHODS).stubOnly());
-		fakeBlock.init(world, x, y, z);
+		fakeBlock.world = world;
+		fakeBlock.x = x;
+		fakeBlock.y = y;
+		fakeBlock.z = z;
+		fakeBlock.type = Material.AIR;
 		return fakeBlock;
-	}
-	
-	public void init(World world, int x, int y, int z) {
-		this.world = world;
-		this.x = x;
-		this.y = y;
-		this.z = z;
-		this.type = Material.AIR;
 	}
 	
 	@Override
@@ -58,8 +54,8 @@ public abstract class FakeBlock implements Block {
 	
 	@Override
 	public boolean isLiquid() {
-		return (type == Material.WATER || type == Material.STATIONARY_WATER
-				|| type == Material.LAVA || type == Material.STATIONARY_LAVA);
+		return (type == Material.WATER
+				|| type == Material.LAVA);
 	}
 	
 }

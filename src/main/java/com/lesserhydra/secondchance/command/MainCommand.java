@@ -1,21 +1,26 @@
 package com.lesserhydra.secondchance.command;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.lesserhydra.secondchance.SecondChance;
+import com.lesserhydra.util.MapBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import com.lesserhydra.secondchance.SecondChance;
-import com.lesserhydra.util.MapBuilder;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MainCommand implements TabCompleter, CommandExecutor {
 	
 	private final Map<String, Subcommand> subcommands = MapBuilder.init(HashMap<String, Subcommand>::new)
 			.put("list", new ListSubcommand(this))
 			.put("break", new BreakSubcommand(this))
+			.put("peek", new PeekSubcommand(this))
 			.put("delete", new DeleteSubcommand(this))
 			.put("reload", new ReloadSubcommand())
 			.buildImmutable();
@@ -32,11 +37,11 @@ public class MainCommand implements TabCompleter, CommandExecutor {
 		}
 		
 		//No subcommand given
-		if (args.length == 0) return false;
+		if (args.length == 0) return false; //TODO: help
 		
 		//Subcommand
 		Subcommand sub = subcommands.get(args[0].toLowerCase());
-		if (sub == null) return false; //Invalid
+		if (sub == null) return false; //TODO: help
 		sub.execute(sender, command, alias, getSubcommandArgs(args));
 		return true;
 	}

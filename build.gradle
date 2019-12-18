@@ -3,12 +3,12 @@ plugins {
 }
 
 apply plugin: 'java'
-apply plugin: 'eclipse'
 
 import org.ajoberstar.grgit.*
 import org.apache.tools.ant.filters.ReplaceTokens
 
-version = generateVersion('0.8')
+group = 'com.lesserhydra'
+version = generateVersion('1.0.1')
 String pluginMain = 'com.lesserhydra.secondchance.SecondChance'
 
 allprojects {
@@ -17,16 +17,14 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven {url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'}
+    //maven {url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'}
   }
 }
 
 dependencies {
   //Bukkit api
-  compile 'org.bukkit:bukkit:1.8-R0.1-SNAPSHOT'
-
-  //Compatibility modules
-  compile project(':compatibility')
+  compile 'org.spigotmc:spigot:1.14.4-R0.1-SNAPSHOT'
+  compile 'org.jetbrains:annotations:15.0'
 
   //Testing libraries
   testCompile 'junit:junit:4.12'
@@ -35,12 +33,6 @@ dependencies {
   testCompile 'org.powermock:powermock-api-mockito:1.6.+'
   testCompile 'org.powermock:powermock-module-junit4:1.6.+'
   testCompile 'org.mockito:mockito-all:1.10.+'
-}
-
-//Add compatibility modules to jar
-jar {
-  from project(':compatibility').sourceSets.main.output.classesDir
-  from project(':compatibility').sourceSets.main.output.resourcesDir
 }
 
 //Generate plugin.yml
@@ -53,8 +45,8 @@ processResources {
   ])
 }
 
-String generateVersion(workingVersion) {
-  Grgit repo = Grgit.open(project.file('.'))
+static String generateVersion(workingVersion) {
+  Grgit repo = Grgit.open()
   Tag currentTag = repo.tag.list().find {it.commit == repo.head()}
 
   if (currentTag == null) return workingVersion + '-SNAPSHOT'

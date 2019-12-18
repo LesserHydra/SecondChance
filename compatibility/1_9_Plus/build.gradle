@@ -1,5 +1,0 @@
-dependencies {
-  compile project(':compatibility:base')
-  //Bukkit api
-  compile 'org.bukkit:bukkit:1.9-R0.1-SNAPSHOT'
-}

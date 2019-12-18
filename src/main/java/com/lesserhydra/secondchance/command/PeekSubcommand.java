@@ -6,19 +6,25 @@ import com.lesserhydra.secondchance.WorldHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
-class DeleteSubcommand implements Subcommand {
+class PeekSubcommand implements Subcommand {
 	
 	private final MainCommand mainCommand;
 	
-	DeleteSubcommand(MainCommand mainCommand) {
+	PeekSubcommand(MainCommand mainCommand) {
 		this.mainCommand = mainCommand;
 	}
 	
 	@Override
 	public void execute(CommandSender sender, Command command, String label, String[] args) {
+		if (!(sender instanceof Player)) {
+			sender.sendMessage(ChatColor.RED + "Error: Can only be run by a player.");
+			return;
+		}
+		
 		if (args.length != 1 || !args[0].matches("\\d+")) {
-			sender.sendMessage(ChatColor.RED + "Error: Wrong number of arguments.");
+			sender.sendMessage(ChatColor.RED + "Error: Bad arguments.");
 			sendUsage(sender, label);
 			return;
 		}
@@ -43,12 +49,12 @@ class DeleteSubcommand implements Subcommand {
 			return;
 		}
 		
-		worldHandler.destroyDeathpoint(deathpoint);
+		deathpoint.peekInv((Player) sender);
 		sender.sendMessage(ChatColor.GREEN + "Success");
 	}
 	
 	private void sendUsage(CommandSender sender, String label) {
-		sender.sendMessage(ChatColor.GRAY + "Usage: /" + label + " delete <index>");
+		sender.sendMessage(ChatColor.GRAY + "Usage: /" + label + " peek <index>");
 		sender.sendMessage(ChatColor.GRAY + "Use the 'list' subcommand first, to get a list of deathpoints to work with.");
 	}
 	

@@ -1,7 +1,1 @@
-include 'compatibility:base'
-include 'compatibility:1_8_R1'
-include 'compatibility:1_8_R2'
-include 'compatibility:1_8_R3'
-include 'compatibility:1_9_Plus'
-
 rootProject.name = 'SecondChance'

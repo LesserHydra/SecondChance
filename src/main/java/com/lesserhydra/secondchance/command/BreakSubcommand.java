@@ -7,11 +7,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
-public class BreakSubcommand implements Subcommand {
+class BreakSubcommand implements Subcommand {
 	
 	private final MainCommand mainCommand;
 	
-	public BreakSubcommand(MainCommand mainCommand) {
+	BreakSubcommand(MainCommand mainCommand) {
 		this.mainCommand = mainCommand;
 	}
 	

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
@@ -45,11 +46,11 @@ class DeathpointHandler implements Listener {
 	private BukkitTask safeLocationTask;
 	
 	
-	public DeathpointHandler(SecondChance plugin) {
+	DeathpointHandler(SecondChance plugin) {
 		this.plugin = plugin;
 	}
 	
-	public void init(ConfigOptions options) {
+	void init(ConfigOptions options) {
 		this.options = options;
 		Bukkit.getWorlds().stream()
 				.filter(world -> !options.isWorldDisabled(world))
@@ -58,12 +59,11 @@ class DeathpointHandler implements Listener {
 				options.locationCheckDelay, options.locationCheckDelay);
 	}
 	
-	public void deinit() {
+	void deinit() {
 		//Stop safe location task
 		safeLocationTask.cancel();
 		//Deinit all remaining worlds
-		worlds.values().stream()
-				.forEach(WorldHandler::deinit);
+		worlds.values().forEach(WorldHandler::deinit);
 		//Clear members
 		worlds.clear();
 		options = null;
@@ -128,7 +128,7 @@ class DeathpointHandler implements Listener {
 		if (options.isWorldDisabled(player.getWorld())) return;
 		
 		//KeepInventory seems to override all event settings (SPIGOT-2222)
-		if (player.getWorld().getGameRuleValue("keepInventory").equals("true")) return;
+		if (player.getWorld().getGameRuleValue(GameRule.KEEP_INVENTORY)) return;
 		
 		//Destroy old deathpoint(s)
 		if (options.deathsTillForget > 0) worlds.values().forEach(handler -> handler.updateDeathsTillForget(player));
@@ -142,7 +142,7 @@ class DeathpointHandler implements Listener {
 		ItemStack[] itemsToHold = null;
 		if (options.holdItems && !event.getKeepInventory()) {
 			//Store all inventory items that have been dropped, and remove from drops
-			itemsToHold = SecondChance.compat().inventoryContents(player.getInventory());
+			itemsToHold = player.getInventory().getContents();
 			for (int i = 0; i < itemsToHold.length; i++) {
 				boolean wasRemoved = event.getDrops().remove(itemsToHold[i]);
 				if (!wasRemoved) itemsToHold[i] = null;
@@ -207,6 +207,7 @@ class DeathpointHandler implements Listener {
 		event.setCancelled(true);
 		
 		Player player = event.getPlayer();
+		if (player.getOpenInventory().getTopInventory() == deathpoint.getInventory()) return;
 		
 		//Deathpoint is protected
 		if (options.isProtected && !player.hasPermission(SecondChance.thiefPermission)
@@ -229,13 +230,18 @@ class DeathpointHandler implements Listener {
 		if (!(holder instanceof Deathpoint)) return;
 		Deathpoint deathpoint = (Deathpoint) holder;
 		
+		if (Deathpoint.isViewingOnly(event.getPlayer())) {
+			Deathpoint.finishView(event.getPlayer());
+			return;
+		}
+		
 		if (deathpoint.isInvalid()) return;
 		if (event.getPlayer() instanceof Player) options.closeSound.run(deathpoint.getLocation(), (Player) event.getPlayer());
 		deathpoint.dropItems();
 		worlds.get(deathpoint.getWorld().getUID()).destroyDeathpoint(deathpoint);
 	}
 	
-	public Stream<WorldHandler> worldHandlers() {
+	Stream<WorldHandler> worldHandlers() {
 		return worlds.values().stream();
 	}
 	
@@ -261,9 +267,21 @@ class DeathpointHandler implements Listener {
 	}
 	
 	private Location getSafePosition(Player player) {
+		//Current loc is good
+		Location safeLoc = Util.entityLocationIsSafe(player);
+		if (safeLoc != null) return normalizeDeathpointLocation(safeLoc);
+		
+		//Else, get last known safe location from metadata
 		Location loc = (Location) player.getMetadata("lastSafePosition").stream()
 				.filter(value -> value.getOwningPlugin() == plugin)
-				.findFirst().get().value();
+				.findFirst()
+				//Fallback
+				.orElseGet(() -> new FixedMetadataValue(plugin, player.getLocation()))
+				.value();
+		return normalizeDeathpointLocation(loc);
+	}
+	
+	private Location normalizeDeathpointLocation(Location loc) {
 		return new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() + 1, loc.getBlockZ() + 0.5);
 	}
 	

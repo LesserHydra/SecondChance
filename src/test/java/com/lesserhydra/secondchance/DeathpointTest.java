@@ -1,70 +1,45 @@
 package com.lesserhydra.secondchance;
 
-import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
+import com.lesserhydra.testing.FakeBukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import com.lesserhydra.testing.TestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Bukkit.class})
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
+
 public class DeathpointTest {
-	
-	private World mockWorld;
-	private Player player1;
-	private Player player2;
 	
 	private List<Deathpoint> deathpoints;
 	
-	@Before public void init() {
-		PowerMockito.mockStatic(Bukkit.class);
-		
-		//Mock server
-		Server mockServer = mock(Server.class);
-		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(TestUtils::createMockInventory);
-		
-		//Mock item factory
-		ItemFactory mockItemFactory = mock(ItemFactory.class);
-		when(mockItemFactory.equals(any(), any())).thenReturn(true); //Hacky, but meta comp fails by default otherwise
-		
-		//Get static Bukkit methods to return mocks
-		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
-		BDDMockito.given(Bukkit.getItemFactory()).willReturn(mockItemFactory);
+	@BeforeClass
+	public static void initClass() {
+		FakeBukkit.setup();
+	}
+	
+	@Before
+	public void init() {
+		FakeBukkit.clear();
 		
 		//Mock world and players
-		this.mockWorld = mockBukkitWorld("world");
-		BDDMockito.given(Bukkit.getWorld(eq("world"))).willReturn(mockWorld);
-		this.player1 = mock(Player.class);
-		this.player2 = mock(Player.class);
-		when(player1.getUniqueId()).thenReturn(UUID.randomUUID());
-		when(player2.getUniqueId()).thenReturn(UUID.randomUUID());
+		World mockWorld = FakeBukkit.makeWorld("world");
+		Player player1 = FakeBukkit.makePlayer("Steve");
+		Player player2 = FakeBukkit.makePlayer("Alex");
 		
 		//Create deathpoints
-		ItemStack[] inv1 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.POTATO_ITEM)}, 41);
-		ItemStack[] inv2 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.REDSTONE_LAMP_OFF, 64), new ItemStack(Material.REDSTONE)}, 41);
+		ItemStack[] inv1 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.POTATO)}, 41);
+		ItemStack[] inv2 = Arrays.copyOf(new ItemStack[] {new ItemStack(Material.REDSTONE_LAMP, 64), new ItemStack(Material.REDSTONE)}, 41);
 		ItemStack[] inv3 = new ItemStack[41];
 		Deathpoint deathpoint1 = new Deathpoint(player1, new Location(mockWorld, 0.03, 555, 10.2), inv1, 99, 3, 5000);
 		Deathpoint deathpoint2 = new Deathpoint(player2, new Location(mockWorld, 50, 404, 42), inv2, 1337, 1, -1);
@@ -73,7 +48,7 @@ public class DeathpointTest {
 	}
 	
 	/*
-	 * Test deathpoint serializarion and deserialization
+	 * Test deathpoint serialization and deserialization
 	 */
 	@Test
 	public void serialization() {
@@ -127,16 +102,16 @@ public class DeathpointTest {
 		point1Later.updateDeathsTillForget();
 		point1Later.updateTicksTillForget(4990);
 		
-		assertTrue(point1.equals(point1Later));
-		assertTrue(point1Later.equals(point1));
+		assertEquals(point1, point1Later);
+		assertEquals(point1Later, point1);
 		assertEquals(point1.hashCode(), point1Later.hashCode());
 		
-		assertFalse(point1.equals(point2));
-		assertFalse(point1Later.equals(point2));
-		assertFalse(point2.equals(point1));
-		assertFalse(point2.equals(point1Later));
-		assertNotEquals(point1.hashCode(), point2.hashCode());
-		assertNotEquals(point1Later.hashCode(), point2.hashCode());
+		assertNotEquals(point1, point2);
+		assertNotEquals(point2, point1);
+		assertNotEquals(point1Later, point2);
+		assertNotEquals(point2, point1Later);
+		//assertNotEquals(point1.hashCode(), point2.hashCode());
+		//assertNotEquals(point1Later.hashCode(), point2.hashCode());
 	}
 	
 }

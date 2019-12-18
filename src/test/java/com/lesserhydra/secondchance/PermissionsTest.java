@@ -1,24 +1,14 @@
 package com.lesserhydra.secondchance;
 
-import static com.lesserhydra.testing.FakeWorld.mockBukkitWorld;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
-import java.io.File;
-import java.io.Reader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
+import com.lesserhydra.secondchance.command.MainCommand;
+import com.lesserhydra.secondchance.configuration.ConfigOptions;
+import com.lesserhydra.testing.FakeBukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -27,118 +17,111 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.SimplePluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitTask;
-import org.junit.*;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
-import com.lesserhydra.secondchance.command.MainCommand;
-import com.lesserhydra.secondchance.compat.Compat;
-import com.lesserhydra.secondchance.configuration.ConfigOptions;
-import com.lesserhydra.testing.TestUtils;
+
+import java.io.File;
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Bukkit.class, YamlConfiguration.class})
+@PrepareForTest(YamlConfiguration.class)
+@PowerMockIgnore("javax.management.*")
 public class PermissionsTest {
 	
-	private Server mockServer;
 	private SecondChance plugin;
 	private DeathpointHandler handler;
 	
 	private MapSaveHandler saveHandler;
 	private ConfigOptions options;
 	
-	private File dataFolder;
-	private File saveFolder;
-	private File configFile;
-	
 	private World world;
 	private Player player1;
-	private Player player2;
 	
 	private Deathpoint deathpoint1;
-	private ArmorStand hitbox1;
 	
 	private Deathpoint deathpoint2;
 	private ArmorStand hitbox2;
 	
-	@Before
-	public void init() {
-		PowerMockito.mockStatic(Bukkit.class, YamlConfiguration.class);
+	@BeforeClass public static void beforeAll() {
+		FakeBukkit.setup();
 		
-		BukkitScheduler mockScheduler = mock(BukkitScheduler.class);
-		when(mockScheduler.runTaskTimer(any(Plugin.class), any(Runnable.class), anyLong(), anyLong())).thenReturn(mock(BukkitTask.class));
-		BDDMockito.given(Bukkit.getScheduler()).willReturn(mockScheduler);
-		
-		this.mockServer = mock(Server.class);
-		when(mockServer.getPluginManager()).thenReturn(new SimplePluginManager(mockServer, new SimpleCommandMap(mockServer)));
-		when(mockServer.createInventory(any(InventoryHolder.class), anyInt(), anyString())).then(TestUtils::createMockInventory);
-		BDDMockito.given(Bukkit.getServer()).willReturn(mockServer);
-		
+		PowerMockito.mockStatic(YamlConfiguration.class);
 		BDDMockito.given(YamlConfiguration.loadConfiguration(any(File.class))).willReturn(new YamlConfiguration());
 		BDDMockito.given(YamlConfiguration.loadConfiguration(any(Reader.class))).willReturn(new YamlConfiguration());
+	}
+	
+	@Before
+	public void init() {
+		FakeBukkit.clear();
 		
-		this.dataFolder = mock(File.class);
-		when(dataFolder.exists()).thenReturn(true);
-		this.saveFolder = mock(File.class);
-		when(saveFolder.exists()).thenReturn(true);
-		this.configFile = mock(File.class);
-		when(configFile.exists()).thenReturn(true);
-		
-		this.plugin = spy(Whitebox.newInstance(SecondChance.class));
-		Whitebox.setInternalState(SecondChance.class, SecondChance.class, plugin);
-		Whitebox.setInternalState(plugin, Compat.class, new TestCompat());
-		Whitebox.setInternalState(plugin, "saveFolder", saveFolder);
-		Whitebox.setInternalState(plugin, "dataFolder", dataFolder, JavaPlugin.class);
+		//Mock plugin setup
+		plugin = spy(Whitebox.newInstance(SecondChance.class));
+		Whitebox.setInternalState(SecondChance.class, plugin);
+		Whitebox.setInternalState(plugin, "isEnabled", true);
+		Whitebox.setInternalState(plugin, "description", new PluginDescriptionFile("SecondChance", "TEST", "com.lesserhydra.secondchance.SecondChance"));
 		doReturn(new YamlConfiguration()).when(plugin).getConfig();
+		doNothing().when(plugin).reload();
 		doNothing().when(plugin).reloadConfig();
 		doNothing().when(plugin).saveDefaultConfig();
 		
-		this.options = new ConfigOptions(new YamlConfiguration());
-		
-		this.handler = new DeathpointHandler(plugin);
+		handler = new DeathpointHandler(plugin);
 		Whitebox.setInternalState(plugin, DeathpointHandler.class, handler);
 		
-		//Mock world and players
-		this.world = mockBukkitWorld("world");
-		when(world.getGameRuleValue(eq("keepInventory"))).thenReturn("false");
-		BDDMockito.given(Bukkit.getWorld(eq("world"))).willReturn(world);
-		BDDMockito.given(Bukkit.getWorlds()).willReturn(Arrays.asList(world));
-		this.player1 = mock(Player.class);
-		when(player1.getName()).thenReturn("Joe");
-		when(player1.getUniqueId()).thenReturn(UUID.randomUUID());
-		when(player1.getType()).thenReturn(EntityType.PLAYER);
-		when(player1.getWorld()).thenReturn(world);
-		this.player2 = mock(Player.class);
-		when(player2.getName()).thenReturn("Bob");
-		when(player2.getUniqueId()).thenReturn(UUID.randomUUID());
-		when(player2.getType()).thenReturn(EntityType.PLAYER);
-		when(player2.getWorld()).thenReturn(world);
+		options = new ConfigOptions(new YamlConfiguration());
 		
-		this.deathpoint1 = new Deathpoint(player1, new Location(world, 0, 0, 0), new ItemStack[41], 0, 1, -1L);
-		this.hitbox1 = mock(ArmorStand.class);
-		when(hitbox1.getType()).thenReturn(EntityType.ARMOR_STAND);
-		when(hitbox1.getMetadata(eq("deathpoint"))).thenReturn(Arrays.asList(new FixedMetadataValue(plugin, deathpoint1)));
-		
-		this.deathpoint2 = new Deathpoint(player2, new Location(world, 0, 0, 0), new ItemStack[41], 0, 1, -1L);
-		this.hitbox2 = mock(ArmorStand.class);
-		when(hitbox2.getType()).thenReturn(EntityType.ARMOR_STAND);
-		when(hitbox2.getMetadata(eq("deathpoint"))).thenReturn(Arrays.asList(new FixedMetadataValue(plugin, deathpoint2)));
-		
-		this.saveHandler = new MapSaveHandler();
-		saveHandler.save(world, Arrays.asList(deathpoint1, deathpoint2));
+		saveHandler = new MapSaveHandler();
 		Whitebox.setInternalState(plugin, SaveHandler.class, saveHandler);
 		
+		//Mock world and players
+		world = FakeBukkit.makeWorld("world");
+		when(world.getGameRuleValue(eq(GameRule.KEEP_INVENTORY))).thenReturn(false);
+		
+		player1 = FakeBukkit.makePlayer("Joe", new Location(world, 0, 0, 0));
+		Player player2 = FakeBukkit.makePlayer("Bob", new Location(world, 0, 0, 0));
+		
+		deathpoint1 = new Deathpoint(player1, new Location(world, 0, 0, 0), new ItemStack[41], 0, 1, -1L);
+		ArmorStand hitbox1 = mock(ArmorStand.class);
+		when(hitbox1.getType()).thenReturn(EntityType.ARMOR_STAND);
+		when(hitbox1.getMetadata(eq("deathpoint"))).thenReturn(Collections.singletonList(new FixedMetadataValue(plugin, deathpoint1)));
+		
+		deathpoint2 = new Deathpoint(player2, new Location(world, 0, 0, 0), new ItemStack[41], 0, 1, -1L);
+		hitbox2 = mock(ArmorStand.class);
+		when(hitbox2.getType()).thenReturn(EntityType.ARMOR_STAND);
+		when(hitbox2.getMetadata(eq("deathpoint"))).thenReturn(Collections.singletonList(new FixedMetadataValue(plugin, deathpoint2)));
+		
+		saveHandler.save(world, Arrays.asList(deathpoint1, deathpoint2));
 		handler.init(options);
 	}
 	
@@ -151,7 +134,7 @@ public class PermissionsTest {
 		Whitebox.setInternalState(options, "holdItems", false);
 		Whitebox.setInternalState(options, "holdExp", true);
 		when(player1.hasPermission(eq(SecondChance.enabledPermission))).thenReturn(false);
-		when(player1.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(plugin, new Location(world, 0, 60, 0))));
+		when(player1.getMetadata("lastSafePosition")).thenReturn(Collections.singletonList(new FixedMetadataValue(plugin, new Location(world, 0, 60, 0))));
 		when(player1.getLevel()).thenReturn(10);
 		
 		/*----------When----------*/
@@ -165,7 +148,7 @@ public class PermissionsTest {
 				.filter(point -> point.getOwnerUniqueId().equals(player1.getUniqueId()))
 				.collect(Collectors.toList());
 		assertEquals(1, player1Deathpoints.size());
-		assertSame(deathpoint1, player1Deathpoints.get(0));;
+		assertSame(deathpoint1, player1Deathpoints.get(0));
 	}
 	
 	/*
@@ -177,7 +160,7 @@ public class PermissionsTest {
 		Whitebox.setInternalState(options, "holdItems", false);
 		Whitebox.setInternalState(options, "holdExp", true);
 		when(player1.hasPermission(eq(SecondChance.enabledPermission))).thenReturn(true);
-		when(player1.getMetadata("lastSafePosition")).thenReturn(Arrays.asList(new FixedMetadataValue(plugin, new Location(world, 0, 60, 0))));
+		when(player1.getMetadata("lastSafePosition")).thenReturn(Collections.singletonList(new FixedMetadataValue(plugin, new Location(world, 0, 60, 0))));
 		when(player1.getLevel()).thenReturn(10);
 		
 		/*----------When----------*/
@@ -286,7 +269,7 @@ public class PermissionsTest {
 		mainCmd.onCommand(sender, command, "secondchance", args);
 		
 		/*----------Then----------*/
-		assertSame(Whitebox.getInternalState(handler, ConfigOptions.class), options);
+		verify(plugin, never()).reload();
 	}
 	
 	/*
@@ -307,7 +290,7 @@ public class PermissionsTest {
 		mainCmd.onCommand(sender, command, "secondchance", args);
 		
 		/*----------Then----------*/
-		assertNotSame(Whitebox.getInternalState(handler, ConfigOptions.class), options);
+		verify(plugin).reload();
 	}
 	
 }

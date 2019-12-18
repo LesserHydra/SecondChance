@@ -47,9 +47,10 @@ public class WorldHandler {
 	void init() {
 		//Remove residual hitboxes in world
 		world.getEntities().stream()
+				.filter(e -> !e.isDead())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
-				.filter(SecondChance.compat()::armorstandIsHitbox)
+				.filter(Deathpoint::armorstandIsHitbox)
 				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
 				.forEach(Entity::remove);
 		
@@ -82,8 +83,7 @@ public class WorldHandler {
 		if (ambientSoundTask != null) ambientSoundTask.cancel();
 		if (timeCheckTask != null) timeCheckTask.cancel();
 		//Despawn hitboxes
-		worldDeathpoints.stream()
-				.forEach(Deathpoint::despawnHitbox);
+		worldDeathpoints.forEach(Deathpoint::despawnHitbox);
 		//Save
 		plugin.getSaveHandler().save(world, worldDeathpoints);
 		//Clear members
@@ -98,21 +98,22 @@ public class WorldHandler {
 	void onChunkLoad(Chunk chunk) {
 		//Remove residual hitboxes
 		Arrays.stream(chunk.getEntities())
+				.filter(e -> !e.isDead())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
-				.filter(SecondChance.compat()::armorstandIsHitbox)
-				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
+				.filter(Deathpoint::armorstandIsHitbox)
+				.peek(e -> plugin.getLogger().warning("Removing residual armorstand on chunk load: " + e.getLocation()))
 				.forEach(Entity::remove);
 		
 		//Spawn deathpoint hitboxes
 		worldDeathpoints.stream()
-				.filter((point) -> chunk.equals(point.getLocation().getChunk()))
+				.filter((point) -> chunk.getX() == point.getChunkX() && chunk.getZ() == point.getChunkZ())
 				.forEach(Deathpoint::spawnHitbox);
 	}
 	
 	void onChunkUnload(Chunk chunk) {
 		worldDeathpoints.stream()
-				.filter((point) -> chunk.equals(point.getLocation().getChunk()))
+				.filter((point) -> chunk.getX() == point.getChunkX() && chunk.getZ() == point.getChunkZ())
 				.forEach(Deathpoint::despawnHitbox);
 	}
 	
@@ -121,15 +122,13 @@ public class WorldHandler {
 		plugin.getSaveHandler().save(world, worldDeathpoints);
 		
 		//Despawn hitboxes
-		worldDeathpoints.stream()
-				.forEachOrdered(Deathpoint::despawnHitbox);
+		worldDeathpoints.forEach(Deathpoint::despawnHitbox);
 		
 		//Schedule hitbox respawn
 		final UUID worldUUID = world.getUID();
 		Bukkit.getScheduler().runTaskLater(plugin, () -> {
 			if (Bukkit.getWorld(worldUUID) == null) return;
-			worldDeathpoints.stream()
-					.forEach(Deathpoint::spawnHitbox);
+			worldDeathpoints.forEach(Deathpoint::spawnHitbox);
 		}, 1);
 	}
 	
@@ -141,14 +140,14 @@ public class WorldHandler {
 		}
 	}
 	
-	void updateTicksTillForget() {
+	private void updateTicksTillForget() {
 		for (Iterator<Deathpoint> it = worldDeathpoints.iterator(); it.hasNext();) {
 			Deathpoint deathpoint = it.next();
 			if (deathpoint.updateTicksTillForget(options.timeCheckDelay)) forgetDeathpoint(deathpoint, it);
 		}
 	}
 	
-	void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
+	 private void forgetDeathpoint(Deathpoint deathpoint, Iterator<Deathpoint> it) {
 		//Play sound and message for owner, if online
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		if (owner != null) {
@@ -157,6 +156,7 @@ public class WorldHandler {
 		}
 		
 		//Forget deathpoint
+		deathpoint.invalidate();
 		if (options.dropItemsOnForget) deathpoint.dropItems();
 		if (options.dropExpOnForget) deathpoint.dropExperience();
 		deathpoint.destroy();
@@ -169,7 +169,7 @@ public class WorldHandler {
 	
 	private void runParticles(Deathpoint deathpoint) {
 		Location location = deathpoint.getLocation();
-		if (!location.getChunk().isLoaded()) return;
+		if (!world.isChunkLoaded(deathpoint.getChunkX(), deathpoint.getChunkZ())) return;
 		
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		options.particlePrimary.run(location, owner);
@@ -178,7 +178,7 @@ public class WorldHandler {
 	
 	private void runAmbientSound(Deathpoint deathpoint) {
 		Location location = deathpoint.getLocation();
-		if (!location.getChunk().isLoaded()) return;
+		if (!world.isChunkLoaded(deathpoint.getChunkX(), deathpoint.getChunkZ())) return;
 		
 		Player owner = Bukkit.getPlayer(deathpoint.getOwnerUniqueId());
 		options.ambientSound.run(location, owner);
