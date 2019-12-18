@@ -47,6 +47,7 @@ public class WorldHandler {
 	void init() {
 		//Remove residual hitboxes in world
 		world.getEntities().stream()
+				.filter(e -> !e.isDead())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
 				.filter(Deathpoint::armorstandIsHitbox)
@@ -97,10 +98,11 @@ public class WorldHandler {
 	void onChunkLoad(Chunk chunk) {
 		//Remove residual hitboxes
 		Arrays.stream(chunk.getEntities())
+				.filter(e -> !e.isDead())
 				.filter(e -> e.getType() == EntityType.ARMOR_STAND)
 				.map(e -> (ArmorStand) e)
 				.filter(Deathpoint::armorstandIsHitbox)
-				.peek(e -> plugin.getLogger().warning("Removing residual armorstand."))
+				.peek(e -> plugin.getLogger().warning("Removing residual armorstand on chunk load: " + e.getLocation()))
 				.forEach(Entity::remove);
 		
 		//Spawn deathpoint hitboxes
@@ -154,6 +156,7 @@ public class WorldHandler {
 		}
 		
 		//Forget deathpoint
+		deathpoint.invalidate();
 		if (options.dropItemsOnForget) deathpoint.dropItems();
 		if (options.dropExpOnForget) deathpoint.dropExperience();
 		deathpoint.destroy();
