@@ -1,6 +1,19 @@
 # Change Log
 All notable changes to this project will be documented in this file.
-This project adheres to [Semantic Versioning](http://semver.org/), or so I think.
+This project supposedly adheres to [Semantic Versioning](http://semver.org/).
+
+## [1.0.1] - 2019-12-18
+This update adds a peek command and squashes a bunch of bugs
+### Added
+- Added peek command
+### Fixed
+- Fixed private particles showing in all worlds
+- Fixed console spam in Spigot 1.14
+- Fixed all known hitbox spawning/despawning issues
+### Changed
+- Will use the players death location if safe, instead of always using the last known safe location
+### Technical
+- Removed compatibility modules (for ease of future maintenance)
 
 ## [0.8] - 2016-06-09
 This update adds options for time/death limits on deathpoints, prelimary administration commands, Bukkit 1.8 support, and fixes a couple bugs.
@@ -106,13 +119,14 @@ First unofficial "release"
 ### Technical
 - Rewrote just about everything
 
-[0.8]: https://github.com/Roboboy64/SecondChance/compare/0.7...0.8
-[0.7]: https://github.com/Roboboy64/SecondChance/compare/0.6.1...0.7
-[0.6.1]: https://github.com/Roboboy64/SecondChance/compare/0.6...0.6.1
-[0.6]: https://github.com/Roboboy64/SecondChance/compare/0.5...0.6
-[0.5]: https://github.com/Roboboy64/SecondChance/compare/0.4...0.5
-[0.4]: https://github.com/Roboboy64/SecondChance/compare/0.3...0.4
-[0.3]: https://github.com/Roboboy64/SecondChance/compare/0.2.1...0.3
-[0.2.1]: https://github.com/Roboboy64/SecondChance/compare/0.2...0.2.1
-[0.2]: https://github.com/Roboboy64/SecondChance/compare/0.1...0.2
-[0.1]: https://github.com/Roboboy64/SecondChance/compare/833d4eb...0.1
+[1.0.1]: https://github.com/lesserhydra/SecondChance/compare/0.8...1.0.1
+[0.8]: https://github.com/lesserhydra/SecondChance/compare/0.7...0.8
+[0.7]: https://github.com/lesserhydra/SecondChance/compare/0.6.1...0.7
+[0.6.1]: https://github.com/lesserhydra/SecondChance/compare/0.6...0.6.1
+[0.6]: https://github.com/lesserhydra/SecondChance/compare/0.5...0.6
+[0.5]: https://github.com/lesserhydra/SecondChance/compare/0.4...0.5
+[0.4]: https://github.com/lesserhydra/SecondChance/compare/0.3...0.4
+[0.3]: https://github.com/lesserhydra/SecondChance/compare/0.2.1...0.3
+[0.2.1]: https://github.com/lesserhydra/SecondChance/compare/0.2...0.2.1
+[0.2]: https://github.com/lesserhydra/SecondChance/compare/0.1...0.2
+[0.1]: https://github.com/lesserhydra/SecondChance/compare/833d4eb...0.1

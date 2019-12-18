@@ -1,7 +1,7 @@
 # SecondChance
 
 ## Info
-SecondChance is a simple deathpoint plugin for Minecraft Bukkit, inspired in part by the DarkSouls soul retrieval mechanic.
+SecondChance is a simple deathpoint plugin for Minecraft Spigot 1.14.4+, inspired in part by the DarkSouls soul retrieval mechanic.
 
 Pull requests are certainly welcome and appreciated.
 
@@ -25,8 +25,8 @@ When a deathpoint is forgotten, it will either drop or delete its contents depen
 #### Safe positions
 An entity is in a safe position if and only if it is riding a vehicle in a safe position or all the following are true:
 - isOnGround()
-- the blocks directly at and one above its position are not solid and not liquid
-- the block directly below its position is solid
+- the blocks directly at and one above its position are not occluding and not liquid
+- the block directly below its position is occluding
 
 ## Configuration
 Most mechanics are configurable, and worlds can be blacklisted or whitelisted by name.
